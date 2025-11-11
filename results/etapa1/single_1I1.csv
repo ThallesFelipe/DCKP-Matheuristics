@@ -1,0 +1,6 @@
+Instance,Method,Profit,Weight,NumItems,Time,Feasible
+1I1,Greedy_MaxProfit,3322,2932,39,0.000153,Yes
+1I1,Greedy_MinWeight,1234,840,34,0.000101,Yes
+1I1,Greedy_MaxProfitWeight,1581,976,40,0.000112,Yes
+1I1,Greedy_MinConflicts,2949,2442,42,0.000169,Yes
+1I1,GRASP_MultiStart_100_alpha0.300000,2000,1375,42,0.278630,Yes

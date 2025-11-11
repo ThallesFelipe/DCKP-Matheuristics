@@ -1,0 +1,8 @@
+,Profit,Profit,Profit,Profit,Profit,Time,Time,Time,Time,NumItems,NumItems
+,mean,std,min,max,median,mean,std,min,max,mean,std
+Method,,,,,,,,,,,
+GRASP_MultiStart_100_alpha0.300000,1928.96,933.79,390,3525,2077.5,0.85,0.72,0.03,2.31,47.9,23.08
+Greedy_MaxProfit,3928.1,1904.95,859,6884,4272.5,0.0,0.0,0.0,0.0,44.26,22.01
+Greedy_MaxProfitWeight,1400.58,720.87,207,2685,1521.0,0.0,0.0,0.0,0.0,43.04,20.81
+Greedy_MinConflicts,2921.16,1429.19,645,5519,3045.0,0.0,0.0,0.0,0.0,48.62,24.37
+Greedy_MinWeight,1391.18,718.01,207,2685,1385.0,0.0,0.0,0.0,0.0,42.98,20.79
