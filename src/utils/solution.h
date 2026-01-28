@@ -9,7 +9,6 @@
 #ifndef SOLUTION_H
 #define SOLUTION_H
 
-#include <vector>
 #include <set>
 #include <string>
 
@@ -68,12 +67,6 @@ public:
      * @brief Limpa a solução
      */
     void clear();
-
-    /**
-     * @brief Cria uma cópia da solução
-     * @return Nova solução idêntica a esta
-     */
-    Solution copy() const;
 
     /**
      * @brief Converte a solução para string

@@ -1,0 +1,281 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% How to use writeLaTeX: 
+%
+% You edit the source code here on the left, and the preview on the
+% right shows you the result within a few seconds.
+%
+% Bookmark this page and share the URL with your co-authors. They can
+% edit at the same time!
+%
+% You can upload figures, bibliographies, custom classes and
+% styles using the files menu.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+
+\usepackage{graphicx,url}
+
+\usepackage[brazil]{babel}   
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref} % <<< deixa links clicáveis sem colorir
+     
+\sloppy
+
+\title{Um Estudo Computacional de Matheurísticas para o\\ Problema da Mochila com Restrição de Conflitos}
+
+\author{Luiz H. Carvalho\inst{1}, Thalles F. R. de A. Santos\inst{1}}
+
+
+\address{Departamento de Computação -- Universidade Federal de Ouro Preto
+  (UFOP)\\
+   Instituto de Ciências Exatas e Biológicas -- 35.402-136 -- Ouro Preto -- MG -- Brazil
+   \email{luiz.hc@aluno.ufop.edu.br, thalles.almeida@aluno.ufop.edu.br}
+}
+
+\begin{document} 
+
+\maketitle
+
+\begin{abstract}
+This paper presents a computational study of constructive heuristics for the Disjunctive Constrained Knapsack Problem (DCKP), an NP-hard challenge. We implemented two classes of methods: (1) deterministic greedy heuristics, based on four sorting strategies, and (2) a GRASP (Greedy Randomized Adaptive Search Procedure) constructive phase, controlled by the $\alpha$ parameter. The algorithms were developed in C++ as a project for a Metaheuristics course. The performance analysis, conducted on literature instances, compares the methods in terms of solution quality (profit) and execution time, using metrics such as the percentage gap and trade-off (Pareto) analysis to identify the most efficient strategies.
+\end{abstract}
+     
+\begin{resumo} 
+Este artigo apresenta um estudo computacional de heurísticas construtivas para o Problema da Mochila com Restrição de Conflitos (DCKP), um problema NP-difícil. Implementamos duas classes de métodos: (1) heurísticas gulosas determinísticas, usando quatro estratégias de ordenação, e (2) uma fase construtiva da metaheurística GRASP, controlada pelo parâmetro $\alpha$. Os algoritmos foram desenvolvidos em C++ como projeto da disciplina de Técnicas Metaheurísticas. A análise de desempenho, realizada em instâncias da literatura, compara os métodos em termos de qualidade da solução (valor) e tempo de execução, utilizando métricas como o gap percentual e a análise de trade-off (Pareto) para identificar as estratégias mais eficientes.
+\end{resumo}
+
+\section{Introdução}
+
+O Problema da Mochila (\textit{Knapsack Problem} - KP) é um dos problemas de otimização combinatória mais clássicos e estudados na literatura. Em sua forma mais conhecida, o objetivo é selecionar um conjunto de itens, cada um com um peso e um valor, de forma a maximizar o valor total dos itens selecionados sem ultrapassar a capacidade de peso de uma mochila.
+
+Este trabalho foca em uma variante complexa deste problema, o Problema da Mochila com Restrição de Conflitos (do inglês \textit{Disjunctive Constrained Knapsack Problem} - DCKP). No DCKP, além da restrição de capacidade, existe um conjunto de conflitos entre pares de itens. Se dois itens são conflitantes, no máximo um deles pode ser selecionado para a solução. Este cenário é comum em problemas reais, como alocação de recursos onde certos recursos não podem ser alocados simultaneamente.
+
+Assim como o KP clássico, o DCKP é classificado como NP-difícil, o que significa que encontrar uma solução ótima exata se torna computacionalmente inviável para instâncias de grande porte. Este fato justifica a utilização de técnicas heurísticas e metaheurísticas para encontrar soluções de alta qualidade em um tempo computacional razoável.
+
+A literatura sobre o DCKP inclui diversas abordagens. \cite{yamada2002} foram os responsáveis por introduzir o problema, propondo uma heurística gulosa e um algoritmo de busca local. Trabalhos subsequentes exploraram diferentes técnicas, como a busca local reativa e algoritmos meméticos baseados em pesquisa de limiar.
+
+O objetivo deste artigo, desenvolvido no âmbito da disciplina de Técnicas Metaheurísticas (BCC466), é implementar, testar e comparar diferentes métodos heurísticos e metaheurísticos para o DCKP, com base no artigo de \cite{alves2022}. Este relatório inicial foca na Etapa 1 do projeto: a definição do problema e a implementação de heurísticas construtivas.
+
+O código-fonte completo do projeto está disponível em um repositório público no GitHub: \textit{\href{https://github.com/ThallesFelipe/DCKP-Matheuristics}{github.com/ThallesFelipe/DCKP-Matheuristics}}.
+
+\section{Problema Tratado}
+\label{sec:problema}
+O Problema da Mochila com Restrição de Conflitos (DCKP) pode ser formalmente definido da seguinte maneira:
+
+Dado um conjunto de $n$ itens $I = \{1, \dots, n\}$, onde cada item $i \in I$ possui um valor $v_i$ e um peso $p_i$ (ambos inteiros positivos). Existe também uma capacidade $C > 0$ da mochila e um conjunto de conflitos $E$, onde $(i, j) \in E$ indica que os itens $i$ e $j$ são conflitantes.
+
+O objetivo é encontrar um subconjunto $S \subseteq I$ que maximize a soma dos valores dos itens selecionados, respeitando duas condições:
+\begin{itemize}
+    \item \textbf{Restrição de Capacidade:} A soma dos pesos dos itens em $S$ não pode ultrapassar $C$.
+    \item \textbf{Restrição de Conflito:} Nenhum par de itens em $S$ pode ter um conflito $(i, j) \in E$.
+\end{itemize}
+
+\subsection{Modelo Matemático}
+\label{subsec:modelo}
+Um modelo de Programação Linear Inteira (PLI) para o DCKP utiliza uma variável de decisão binária $x_i$ para cada item $i$. Onde $x_i = 1$ se o item $i$ é selecionado para a mochila, e $x_i = 0$, caso contrário.
+
+O modelo é descrito matematicamente da seguinte forma:
+
+\vspace{5mm} % Adiciona um espaço vertical
+\textbf{Maximizar:}
+\begin{equation} \label{eq:objetivo}
+    \sum_{i=1}^{n} v_i x_i
+\end{equation}
+
+\vspace{5mm} % Adiciona um espaço vertical
+\textbf{Sujeito a:}
+\begin{align}
+    \sum_{i=1}^{n} p_i x_i \le C \label{eq:capacidade} \\
+    x_i + x_j \le 1, \quad \forall (i, j) \in E \label{eq:conflito} \\
+    x_i \in \{0, 1\}, \quad \forall i = 1, \dots, n \label{eq:binario}
+\end{align}
+
+A Equação \ref{eq:objetivo} é a função objetivo que maximiza o valor total dos itens selecionados. A Restrição \ref{eq:capacidade} garante que a capacidade da mochila não seja excedida. A Restrição \ref{eq:conflito} é a restrição de conflitos, assegurando que, para cada par conflitante, no máximo um item seja selecionado. Finalmente, a Restrição \ref{eq:binario} define a natureza binária das variáveis de decisão.
+
+\section{Metodologia}
+\label{sec:metodologia}
+Para resolver o DCKP, a metodologia deste trabalho será dividida nas três etapas propostas pela disciplina: (1) heurísticas construtivas, (2) buscas locais e (3) metaheurísticas. Esta seção inicial detalha os componentes fundamentais e as heurísticas construtivas da Etapa 1.
+
+\subsection{Representação da Solução}
+Conforme a estrutura do modelo matemático (Seção \ref{subsec:modelo}), a representação computacional de uma solução será um vetor binário $\mathbf{x}$ de tamanho $n$, onde $n$ é o número total de itens.
+
+\begin{equation} \label{eq:solucao}
+    \mathbf{x} = [x_1, x_2, \dots, x_n]
+\end{equation}
+
+Cada posição $i$ do vetor está associada ao item $i$. O valor $x_i = 1$ indica que o item $i$ foi incluído na solução (está na mochila), e $x_i = 0$ indica que o item $i$ não foi incluído. Uma solução $\mathbf{x}$ é considerada \emph{viável} somente se atender a todas as restrições (Equações \ref{eq:capacidade} e \ref{eq:conflito}).
+
+\subsection{Função Objetivo}
+
+A função objetivo (FO) é usada para avaliar a qualidade de uma determinada solução $\mathbf{x}$. O cálculo da FO, dado pela Equação \ref{eq:fo}, é a soma dos valores de todos os itens incluídos na solução:
+
+\begin{equation} \label{eq:fo}
+    f(\mathbf{x}) = \sum_{i=1}^{n} v_i x_i
+\end{equation}
+
+Para o cálculo, o algoritmo deve iterar pelo vetor solução $\mathbf{x}$ e somar $v_i$ para todo item $i$ onde $x_i = 1$.
+
+\subsection{Heurísticas Construtivas}
+
+Para a primeira etapa do trabalho, foram implementadas duas classes de métodos construtivos: um conjunto de heurísticas gulosas determinísticas e uma heurística construtiva semi-gulosa e randomizada (GRASP).
+
+Diferente da abordagem de decomposição (ISP+KP) sugerida no artigo base \cite{alves2022}, nossas implementações constroem a solução em uma única passada, considerando as restrições de capacidade e conflitos de forma simultânea a cada passo.
+
+\subsubsection{Heurística Construtiva Gulosa (\textit{Greedy})}
+
+A primeira classe de heurísticas são algoritmos gulosos determinísticos. O princípio de funcionamento é:
+\begin{enumerate}
+    \item Ordenar \emph{todos} os $n$ itens da instância de acordo com um critério (estratégia gulosa).
+    \item Iterar pela lista ordenada de itens.
+    \item Para cada item $i$ da lista:
+        \begin{itemize}
+            \item Verificar se a adição de $i$ à solução parcial é viável. A viabilidade aqui requer duas condições:
+                \begin{itemize}
+                    \item \textbf{Capacidade:} O peso total (solução + $p_i$) não excede $C$.
+                    \item \textbf{Conflitos:} O item $i$ não possui conflito com \emph{nenhum} item $j$ já presente na solução.
+                \end{itemize}
+            \item Se o item $i$ for viável, ele é adicionado permanentemente à solução.
+        \end{itemize}
+    \item A heurística termina após avaliar todos os itens.
+\end{enumerate}
+
+Com base na implementação (`greedy.h`), foram testadas quatro estratégias de ordenação distintas:
+\begin{itemize}
+    \item \textbf{MaxProfit:} Ordena por maior valor (lucro).
+    \item \textbf{MinWeight:} Ordena por menor peso.
+    \item \textbf{MaxProfitWeight:} Ordena pela maior razão valor/peso.
+    \item \textbf{MinConflicts:} Ordena pelo menor número de conflitos (grau do nó no grafo de conflitos).
+\end{itemize}
+
+\subsubsection{Heurística Construtiva GRASP}
+
+A segunda heurística implementada é a fase construtiva da metaheurística \textbf{GRASP} (\textit{Greedy Randomized Adaptive Search Procedure}). Esta abordagem é mais robusta que um algoritmo puramente aleatório, pois introduz aleatoriedade de forma controlada.
+
+O algoritmo constrói a solução iterativamente. Em cada passo, até que nenhum item viável possa ser adicionado, o algoritmo executa:
+\begin{enumerate}
+    \item \textbf{Construção da RCL:} Uma Lista Restrita de Candidatos (RCL) é criada.
+    \item \textbf{Seleção Aleatória:} Um item $i$ é selecionado aleatoriamente da RCL.
+    \item \textbf{Adição:} O item $i$ é adicionado à solução, e a capacidade e restrições são atualizadas.
+\end{enumerate}
+
+A construção da RCL (`buildRCL` em `grasp.cpp`) é o componente central. Para formá-la:
+\begin{itemize}
+    \item Apenas itens \emph{atualmente viáveis} (que respeitam a capacidade restante e não conflitam com a solução parcial) são considerados.
+    \item Cada item viável recebe um \emph{score} (função de avaliação gulosa).
+    \item O parâmetro $\alpha$ (alpha), variando de 0 (totalmente guloso) a 1 (totalmente aleatório), é usado para definir um limiar de corte.
+    \item A RCL é populada com todos os candidatos viáveis cujo score é maior ou igual ao limiar.
+\end{itemize}
+
+A função de \emph{score} (`calculateScore` em `grasp.cpp`) implementada é adaptativa:
+\begin{itemize}
+    \item O \emph{score} base é a razão valor/peso do item.
+    \item Esse \emph{score} é dinamicamente penalizado com base em:
+        \begin{itemize}
+            \item Conflitos com itens já selecionados na solução parcial.
+            \item O número total de conflitos que o item possui no grafo (seu grau).
+        \end{itemize}
+    \item Isso torna a função gulosa "adaptativa", pois o quão bom um item parece ser muda a cada passo da construção.
+\end{itemize}
+
+Esta implementação permite a execução de um \emph{Multi-Start}, onde a construção GRASP é executada $k$ vezes, e a melhor das $k$ soluções é retornada.
+
+\section{Resultados Parciais}
+\label{sec:resultados}
+
+Esta seção apresenta os resultados obtidos com a implementação e execução das heurísticas construtivas descritas na Seção \ref{sec:metodologia}. Os experimentos foram conduzidos em 50 instâncias do conjunto \textit{DCKP-instances-set I-100} \cite{alves2022}, especificamente nas instâncias I1 a I10 (5 variações de cada), totalizando 250 experimentos considerando os 5 métodos implementados.
+
+\subsection{Configuração Experimental}
+
+Os algoritmos foram implementados em C++ (padrão C++17) e compilados com otimizações habilitadas (flag \texttt{-O3} para GCC/Clang, \texttt{/O2} para MSVC). Todos os experimentos foram executados em um único \textit{thread}, garantindo condições idênticas para comparação justa entre os métodos.
+
+Para o GRASP, utilizou-se uma configuração Multi-Start com 100 iterações e parâmetro $\alpha = 0.3$, selecionado após análise exploratória inicial. As heurísticas gulosas são determinísticas, portanto foram executadas uma única vez por instância.
+
+\subsection{Análise de Desempenho}
+
+A Tabela \ref{tab:statistics} apresenta as estatísticas descritivas de desempenho dos cinco métodos implementados. O método \textbf{Greedy\_MaxProfit} demonstrou superioridade clara, obtendo o melhor resultado em todas as 50 instâncias testadas, com valor médio de 3928.10 e valor máximo de 6884 (instância 5I1).
+
+\begin{table}[h]
+\centering
+\caption{Estatísticas de desempenho dos métodos construtivos}
+\label{tab:statistics}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l|rrrr|rrr}
+\hline
+\textbf{Método} & \textbf{Média} & \textbf{Mediana} & \textbf{Desvio} & \textbf{CV (\%)} & \textbf{Tempo (s)} & \textbf{Itens} & \textbf{Vitórias} \\
+\hline
+Greedy\_MaxProfit & 3928.10 & 4272.50 & 1904.95 & 48.50 & 0.0003 & 44.3 & 50 \\
+Greedy\_MinConflicts & 2921.16 & 3045.00 & 1429.19 & 48.93 & 0.0003 & 48.6 & 0 \\
+GRASP\_MultiStart & 1928.96 & 2077.50 & 933.79 & 48.41 & 0.8534 & 47.9 & 0 \\
+Greedy\_MaxProfitWeight & 1400.58 & 1521.00 & 720.87 & 51.47 & 0.0002 & 43.0 & 0 \\
+Greedy\_MinWeight & 1391.18 & 1385.00 & 718.01 & 51.61 & 0.0002 & 43.0 & 0 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+O método \textbf{Greedy\_MinConflicts} obteve o segundo melhor desempenho médio (2921.16), apresentando um \textit{gap} médio de 24.96\% em relação ao Greedy\_MaxProfit. Apesar de não vencer em nenhuma instância, este método demonstrou ser uma alternativa competitiva, com tempo de execução praticamente instantâneo.
+
+O \textbf{GRASP}, embora tenha apresentado maior diversidade de soluções devido à sua natureza estocástica, ficou em terceiro lugar com valor médio de 1928.96 e \textit{gap} médio de 50.91\%. O tempo de execução médio de 0.85s é significativamente superior aos métodos gulosos, reflexo das 100 iterações Multi-Start.
+
+Os métodos baseados em peso (\textbf{Greedy\_MinWeight} e \textbf{Greedy\_MaxProfitWeight}) apresentaram os piores desempenhos, com valores médios próximos (1391.18 e 1400.58, respectivamente) e \textit{gaps} superiores a 64\%.
+
+\subsection{Análise Comparativa}
+
+A Figura \ref{fig:method_comparison} apresenta a comparação visual dos valores médios obtidos por cada método. A superioridade do Greedy\_MaxProfit é evidente, seguido pelo Greedy\_MinConflicts. Os demais métodos formam um grupo de desempenho consideravelmente inferior.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{results/etapa1/analysis/method_comparison.png}
+\caption{Comparação dos valores médios obtidos pelos métodos construtivos}
+\label{fig:method_comparison}
+\end{figure}
+
+A Figura \ref{fig:method_performance} detalha o desempenho de cada método através de \textit{boxplots}, permitindo visualizar a distribuição completa dos valores obtidos. Nota-se que o Greedy\_MaxProfit apresenta a maior amplitude de valores, porém com quartis superiores consistentemente mais altos que os demais métodos.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{results/etapa1/analysis/method_performance.png}
+\caption{Distribuição dos valores obtidos por cada método (boxplot)}
+\label{fig:method_performance}
+\end{figure}
+
+\subsection{Correlação entre Características das Instâncias}
+
+A Figura \ref{fig:items_profit} mostra a relação entre o número de itens selecionados e o valor total obtido para cada método. Observa-se uma correlação positiva forte, indicando que soluções com mais itens tendem a alcançar valores maiores. No entanto, o Greedy\_MaxProfit consegue obter valores superiores mesmo com número de itens comparável aos outros métodos, sugerindo melhor qualidade na seleção de itens.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{results/etapa1/analysis/items_vs_profit.png}
+\caption{Relação entre número de itens selecionados e valor total da solução}
+\label{fig:items_profit}
+\end{figure}
+
+\subsection{Discussão}
+
+Os resultados demonstram que, para o conjunto de instâncias testado, a estratégia gulosa baseada em valor máximo (MaxProfit) é altamente eficaz. Esta superioridade pode ser atribuída às características específicas das instâncias I1-I10, que possuem estrutura de conflitos relativamente esparsa (densidade média de conflitos moderada), permitindo que a maximização direta do valor seja uma estratégia eficiente.
+
+A estratégia MinConflicts, apesar de não vencer em nenhuma instância, apresentou o segundo melhor desempenho médio, sugerindo que minimizar conflitos é uma heurística razoável para construir soluções viáveis de qualidade intermediária.
+
+O desempenho inferior do GRASP nesta etapa pode ser explicado por diversos fatores: (1) o parâmetro $\alpha = 0.3$ pode não ser ideal para estas instâncias, (2) a ausência de uma fase de busca local limita o refinamento das soluções construídas, e (3) as instâncias testadas podem favorecer estratégias determinísticas mais diretas.
+
+As estratégias baseadas em peso (MinWeight e MaxProfitWeight) mostraram-se inadequadas isoladamente, provavelmente por não considerarem adequadamente os conflitos entre itens durante a construção da solução.
+
+\subsection{Considerações sobre a Etapa 1}
+
+Esta primeira etapa estabeleceu uma base sólida para as próximas fases do trabalho. Os resultados indicam que:
+\begin{itemize}
+    \item O método Greedy\_MaxProfit será utilizado como base de comparação e potencial solução inicial para as metaheurísticas.
+    \item O GRASP apresenta potencial para melhoria quando combinado com buscas locais (Etapa 2).
+    \item É necessário investigar instâncias maiores e com diferentes densidades de conflitos (conjunto DCKP-instances-set II-6240) para validar a generalização dos resultados.
+\end{itemize}
+
+As próximas etapas incluirão a implementação de métodos de busca local para refinamento das soluções construtivas, seguidas pela implementação de metaheurísticas completas (VNS, ILS, e possivelmente algoritmos genéticos ou meméticos), conforme proposto por \cite{alves2022}.
+
+\bibliographystyle{sbc}
+\bibliography{sbc-template}
+
+\end{document}

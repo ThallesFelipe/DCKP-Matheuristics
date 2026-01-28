@@ -1,6 +1,6 @@
 /**
  * @file greedy.cpp
- * @brief Implementação das heurísticas construtivas gulosas
+ * @brief Implementacao das heuristicas construtivas gulosas
  */
 
 #include "greedy.h"
@@ -23,7 +23,7 @@ double GreedyConstructive::calculateScore(int item, GreedyStrategy strategy) con
 
     case GreedyStrategy::MAX_PROFIT_WEIGHT:
         if (instance.weights[item] == 0)
-            return 1e9;
+            return static_cast<double>(instance.profits[item]) * 1000.0;
         return static_cast<double>(instance.profits[item]) / instance.weights[item];
 
     case GreedyStrategy::MIN_CONFLICTS:
@@ -41,60 +41,42 @@ std::vector<int> GreedyConstructive::sortItemsByStrategy(GreedyStrategy strategy
 
     for (int i = 0; i < instance.n_items; i++)
     {
-        ItemScore is;
-        is.item_id = i;
-        is.score = calculateScore(i, strategy);
-        scores.push_back(is);
+        scores.push_back({i, calculateScore(i, strategy)});
     }
 
-    // Ordena em ordem decrescente de score
     std::sort(scores.begin(), scores.end(), std::greater<ItemScore>());
 
-    std::vector<int> sorted_items;
-    sorted_items.reserve(instance.n_items);
-    for (const auto &item_score : scores)
-    {
-        sorted_items.push_back(item_score.item_id);
-    }
+    std::vector<int> result;
+    result.reserve(instance.n_items);
+    for (const auto &s : scores)
+        result.push_back(s.item_id);
 
-    return sorted_items;
+    return result;
 }
 
 Solution GreedyConstructive::construct(GreedyStrategy strategy)
 {
-    auto start_time = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::steady_clock::now();
 
     Solution solution;
     solution.method_name = "Greedy_" + strategyToString(strategy);
 
-    // Ordena itens pela estratégia escolhida
-    std::vector<int> sorted_items = sortItemsByStrategy(strategy);
-
-    // Tenta adicionar cada item na ordem
-    for (int item : sorted_items)
+    for (int item : sortItemsByStrategy(strategy))
     {
-        // Verifica capacidade
         if (!validator.checkCapacity(solution.total_weight, instance.weights[item]))
-        {
             continue;
-        }
 
-        // Verifica conflitos
         if (!validator.checkConflicts(item, solution.selected_items))
-        {
             continue;
-        }
 
-        // Adiciona o item
         solution.addItem(item, instance.profits[item], instance.weights[item]);
     }
 
-    // Valida a solução final
     validator.validate(solution);
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end_time - start_time;
-    solution.computation_time = elapsed.count();
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    solution.computation_time = std::max(0.0, elapsed.count());
 
     std::cout << "Greedy (" << strategyToString(strategy) << "): "
               << "Valor = " << solution.total_profit
@@ -106,26 +88,16 @@ Solution GreedyConstructive::construct(GreedyStrategy strategy)
 
 std::vector<Solution> GreedyConstructive::constructAll()
 {
-    std::cout << "\n=== Executando todas as estratégias Greedy ===" << std::endl;
+    std::cout << "\n--- Estrategias Greedy ---\n";
 
     std::vector<Solution> solutions;
-
     solutions.push_back(construct(GreedyStrategy::MAX_PROFIT));
     solutions.push_back(construct(GreedyStrategy::MIN_WEIGHT));
     solutions.push_back(construct(GreedyStrategy::MAX_PROFIT_WEIGHT));
     solutions.push_back(construct(GreedyStrategy::MIN_CONFLICTS));
 
-    // Encontra a melhor solução
-    auto best = std::max_element(solutions.begin(), solutions.end(),
-                                 [](const Solution &a, const Solution &b)
-                                 {
-                                     return a.total_profit < b.total_profit;
-                                 });
-
-    std::cout << "\nMelhor estratégia Greedy: " << best->method_name
-              << " com valor = " << best->total_profit << std::endl;
-    std::cout << "=============================================\n"
-              << std::endl;
+    auto best = std::max_element(solutions.begin(), solutions.end());
+    std::cout << "Melhor Greedy: " << best->method_name << " = " << best->total_profit << "\n";
 
     return solutions;
 }

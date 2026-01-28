@@ -1,9 +1,6 @@
 /**
  * @file main.cpp
- * @brief Programa principal para execução dos experimentos da Etapa 1
- *
- * Este programa executa as heurísticas construtivas (Greedy e GRASP)
- * em instâncias do DCKP e salva os resultados para análise.
+ * @brief Programa principal para experimentos com heurísticas construtivas do DCKP
  */
 
 #include <iostream>
@@ -23,9 +20,6 @@
 
 namespace fs = std::filesystem;
 
-/**
- * @brief Estrutura para armazenar resultados de experimentos
- */
 struct ExperimentResult
 {
     std::string instance_name;
@@ -37,182 +31,133 @@ struct ExperimentResult
     bool feasible;
 };
 
-/**
- * @brief Salva resultados em formato CSV
- */
-void saveResultsCSV(const std::vector<ExperimentResult> &results,
-                    const std::string &filename)
+void saveResultsCSV(const std::vector<ExperimentResult> &results, const std::string &filename)
 {
     std::ofstream file(filename);
     if (!file.is_open())
     {
-        std::cerr << "Erro ao criar arquivo de resultados: " << filename << std::endl;
+        std::cerr << "Erro ao criar arquivo: " << filename << std::endl;
         return;
     }
 
-    // Cabeçalho CSV
-    file << "Instance,Method,Profit,Weight,NumItems,Time,Feasible" << std::endl;
+    file << "Instance,Method,Profit,Weight,NumItems,Time,Feasible\n";
 
-    // Dados
-    for (const auto &result : results)
+    for (const auto &r : results)
     {
-        file << result.instance_name << ","
-             << result.method << ","
-             << result.profit << ","
-             << result.weight << ","
-             << result.n_items << ","
-             << std::fixed << std::setprecision(6) << result.time << ","
-             << (result.feasible ? "Yes" : "No") << std::endl;
+        file << r.instance_name << ","
+             << r.method << ","
+             << r.profit << ","
+             << r.weight << ","
+             << r.n_items << ","
+             << std::fixed << std::setprecision(6) << r.time << ","
+             << (r.feasible ? "Yes" : "No") << "\n";
     }
 
-    file.close();
-    std::cout << "Resultados salvos em: " << filename << std::endl;
+    std::cout << "Resultados salvos: " << filename << std::endl;
 }
 
-/**
- * @brief Processa uma única instância com todos os métodos
- */
-std::vector<ExperimentResult> processInstance(const std::string &instance_path,
-                                              const std::string &instance_name)
+std::vector<ExperimentResult> processInstance(const std::string &path, const std::string &name)
 {
     std::vector<ExperimentResult> results;
 
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "Processando: " << instance_name << std::endl;
-    std::cout << "========================================" << std::endl;
+    std::cout << "\n----------------------------------------\n";
+    std::cout << "Instancia: " << name << "\n";
+    std::cout << "----------------------------------------\n";
 
-    // Carrega a instância
     DCKPInstance instance;
-    if (!instance.readFromFile(instance_path))
+    if (!instance.readFromFile(path))
     {
-        std::cerr << "Falha ao carregar instância: " << instance_path << std::endl;
+        std::cerr << "Falha ao carregar: " << path << std::endl;
         return results;
     }
 
     instance.print();
 
-    // Executa Greedy com todas as estratégias
-    std::cout << "\n--- Heurísticas Gulosas ---" << std::endl;
+    // Greedy
+    std::cout << "\n--- Heuristicas Gulosas ---\n";
     GreedyConstructive greedy(instance);
-    std::vector<Solution> greedy_solutions = greedy.constructAll();
+    auto greedy_solutions = greedy.constructAll();
 
     for (const auto &sol : greedy_solutions)
     {
-        ExperimentResult result;
-        result.instance_name = instance_name;
-        result.method = sol.method_name;
-        result.profit = sol.total_profit;
-        result.weight = sol.total_weight;
-        result.n_items = sol.size();
-        result.time = sol.computation_time;
-        result.feasible = sol.is_feasible;
-        results.push_back(result);
+        results.push_back({name, sol.method_name, sol.total_profit, sol.total_weight,
+                           sol.size(), sol.computation_time, sol.is_feasible});
     }
 
-    // Executa GRASP
-    std::cout << "\n--- GRASP ---" << std::endl;
+    // GRASP
+    std::cout << "\n--- GRASP ---\n";
     GRASPConstructive grasp(instance);
+    Solution grasp_sol = grasp.solve(100, 0.3);
 
-    // GRASP com alpha = 0.3 e 100 iterações
-    Solution grasp_solution = grasp.multiStart(100, 0.3);
+    results.push_back({name, grasp_sol.method_name, grasp_sol.total_profit, grasp_sol.total_weight,
+                       grasp_sol.size(), grasp_sol.computation_time, grasp_sol.is_feasible});
 
-    ExperimentResult grasp_result;
-    grasp_result.instance_name = instance_name;
-    grasp_result.method = grasp_solution.method_name;
-    grasp_result.profit = grasp_solution.total_profit;
-    grasp_result.weight = grasp_solution.total_weight;
-    grasp_result.n_items = grasp_solution.size();
-    grasp_result.time = grasp_solution.computation_time;
-    grasp_result.feasible = grasp_solution.is_feasible;
-    results.push_back(grasp_result);
-
-    // Resumo da instância
-    std::cout << "\n--- Resumo ---" << std::endl;
+    // Resumo
     auto best = std::max_element(results.begin(), results.end(),
                                  [](const ExperimentResult &a, const ExperimentResult &b)
-                                 {
-                                     return a.profit < b.profit;
-                                 });
+                                 { return a.profit < b.profit; });
 
-    std::cout << "Melhor método: " << best->method << std::endl;
-    std::cout << "Melhor valor: " << best->profit << std::endl;
+    std::cout << "\nMelhor: " << best->method << " = " << best->profit << "\n";
 
     return results;
 }
 
-/**
- * @brief Processa todas as instâncias de um diretório
- */
-void processDirectory(const std::string &directory_path,
-                      const std::string &output_csv)
+void processDirectory(const std::string &dir_path, const std::string &output_csv)
 {
     std::vector<ExperimentResult> all_results;
 
-    std::cout << "\n=======================================" << std::endl;
-    std::cout << "Processando diretório: " << directory_path << std::endl;
-    std::cout << "=======================================\n"
-              << std::endl;
+    std::cout << "\n========================================\n";
+    std::cout << "Diretorio: " << dir_path << "\n";
+    std::cout << "========================================\n";
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 
-    // Itera sobre os arquivos do diretório
-    for (const auto &entry : fs::directory_iterator(directory_path))
+    for (const auto &entry : fs::recursive_directory_iterator(dir_path))
     {
-        if (entry.is_regular_file())
-        {
-            std::string filepath = entry.path().string();
-            std::string filename = entry.path().filename().string();
+        if (!entry.is_regular_file())
+            continue;
 
-            // Pula arquivos .txt que são apenas documentação
-            if (filename.find(".txt") != std::string::npos &&
-                filename.length() > 10)
-            {
-                continue;
-            }
+        std::string filepath = entry.path().string();
+        std::string filename = entry.path().filename().string();
 
-            std::vector<ExperimentResult> instance_results =
-                processInstance(filepath, filename);
+        if (filename[0] == '.' || filepath.find(".csv") != std::string::npos)
+            continue;
 
-            all_results.insert(all_results.end(),
-                               instance_results.begin(),
-                               instance_results.end());
-        }
+        auto instance_results = processInstance(filepath, filename);
+        all_results.insert(all_results.end(), instance_results.begin(), instance_results.end());
     }
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end_time - start_time;
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
 
-    std::cout << "\n=======================================" << std::endl;
-    std::cout << "Processamento completo!" << std::endl;
-    std::cout << "Tempo total: " << elapsed.count() << " segundos" << std::endl;
-    std::cout << "Total de resultados: " << all_results.size() << std::endl;
-    std::cout << "=======================================\n"
-              << std::endl;
+    std::cout << "\n========================================\n";
+    std::cout << "Concluido! Tempo: " << elapsed.count() << "s\n";
+    std::cout << "Total de resultados: " << all_results.size() << "\n";
+    std::cout << "========================================\n";
 
-    // Salva resultados
     saveResultsCSV(all_results, output_csv);
 }
 
-/**
- * @brief Função principal
- */
+void printUsage(const char *prog)
+{
+    std::cout << "Uso: " << prog << " <modo> [argumentos]\n\n";
+    std::cout << "Modos:\n";
+    std::cout << "  single <arquivo> [csv]     Processa uma instancia\n";
+    std::cout << "  batch <diretorio> <csv>    Processa todas as instancias\n\n";
+    std::cout << "Exemplos:\n";
+    std::cout << "  " << prog << " single DCKP-instances/.../1I1\n";
+    std::cout << "  " << prog << " batch DCKP-instances/... results/results.csv\n";
+}
+
 int main(int argc, char *argv[])
 {
-    std::cout << "========================================" << std::endl;
-    std::cout << "DCKP - Etapa 1: Heurísticas Construtivas" << std::endl;
-    std::cout << "========================================\n"
-              << std::endl;
+    std::cout << "========================================\n";
+    std::cout << "DCKP - Heuristicas Construtivas\n";
+    std::cout << "========================================\n";
 
     if (argc < 2)
     {
-        std::cout << "Uso: " << argv[0] << " <modo> [argumentos]" << std::endl;
-        std::cout << "\nModos disponíveis:" << std::endl;
-        std::cout << "  single <arquivo>           - Processa uma única instância" << std::endl;
-        std::cout << "  batch <diretório> <csv>    - Processa todas as instâncias de um diretório" << std::endl;
-        std::cout << "  tune <arquivo>             - Calibra alpha do GRASP em uma instância" << std::endl;
-        std::cout << "\nExemplos:" << std::endl;
-        std::cout << "  " << argv[0] << " single DCKP-instances/DCKP-instances-set I-100/I1 - I10/1I1" << std::endl;
-        std::cout << "  " << argv[0] << " batch DCKP-instances/DCKP-instances-set I-100/I1 - I10 results/etapa1/results.csv" << std::endl;
+        printUsage(argv[0]);
         return 1;
     }
 
@@ -222,69 +167,33 @@ int main(int argc, char *argv[])
     {
         if (mode == "single" && argc >= 3)
         {
-            // Modo single: processa uma instância
-            std::string instance_path = argv[2];
-            std::string instance_name = fs::path(instance_path).filename().string();
+            std::string path = argv[2];
+            std::string name = fs::path(path).filename().string();
+            auto results = processInstance(path, name);
 
-            std::vector<ExperimentResult> results =
-                processInstance(instance_path, instance_name);
-
-            // Salva resultados
-            std::string output_file = "results/etapa1/single_" + instance_name + ".csv";
-            saveResultsCSV(results, output_file);
+            if (argc >= 4)
+                saveResultsCSV(results, argv[3]);
         }
         else if (mode == "batch" && argc >= 4)
         {
-            // Modo batch: processa diretório
-            std::string directory_path = argv[2];
-            std::string output_csv = argv[3];
+            fs::path csv_path(argv[3]);
+            if (csv_path.has_parent_path())
+                fs::create_directories(csv_path.parent_path());
 
-            processDirectory(directory_path, output_csv);
-        }
-        else if (mode == "tune" && argc >= 3)
-        {
-            // Modo tune: calibra parâmetros
-            std::string instance_path = argv[2];
-
-            DCKPInstance instance;
-            if (!instance.readFromFile(instance_path))
-            {
-                std::cerr << "Erro ao carregar instância" << std::endl;
-                return 1;
-            }
-
-            GRASPConstructive grasp(instance);
-            std::vector<Solution> results = grasp.tuneAlpha(20);
-
-            // Salva resultados da calibração
-            std::vector<ExperimentResult> tune_results;
-            for (const auto &sol : results)
-            {
-                ExperimentResult result;
-                result.instance_name = fs::path(instance_path).filename().string();
-                result.method = sol.method_name;
-                result.profit = sol.total_profit;
-                result.weight = sol.total_weight;
-                result.n_items = sol.size();
-                result.time = sol.computation_time;
-                result.feasible = sol.is_feasible;
-                tune_results.push_back(result);
-            }
-
-            saveResultsCSV(tune_results, "results/etapa1/alpha_tuning.csv");
+            processDirectory(argv[2], argv[3]);
         }
         else
         {
-            std::cerr << "Modo ou argumentos inválidos" << std::endl;
+            printUsage(argv[0]);
             return 1;
         }
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Erro durante execução: " << e.what() << std::endl;
+        std::cerr << "Erro: " << e.what() << std::endl;
         return 1;
     }
 
-    std::cout << "\nPrograma finalizado com sucesso!" << std::endl;
+    std::cout << "\nFinalizado.\n";
     return 0;
 }

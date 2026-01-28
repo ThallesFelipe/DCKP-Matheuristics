@@ -66,6 +66,13 @@ private:
      */
     int selectFromRCL(const std::vector<int> &rcl);
 
+    /**
+     * @brief Constrói uma única solução usando o procedimento GRASP
+     * @param alpha Parâmetro de controle da aleatoriedade [0, 1]
+     * @return Solução construída
+     */
+    Solution constructSolution(double alpha);
+
 public:
     /**
      * @brief Construtor
@@ -75,26 +82,12 @@ public:
     explicit GRASPConstructive(const DCKPInstance &inst, unsigned int seed = 42);
 
     /**
-     * @brief Constrói uma solução usando GRASP
-     * @param alpha Parâmetro de controle da aleatoriedade [0, 1]
-     * @return Solução construída
-     */
-    Solution construct(double alpha = 0.3);
-
-    /**
      * @brief Executa múltiplas iterações do GRASP
      * @param iterations Número de iterações
      * @param alpha Parâmetro de controle da aleatoriedade
      * @return Melhor solução encontrada
      */
-    Solution multiStart(int iterations, double alpha = 0.3);
-
-    /**
-     * @brief Executa GRASP com diferentes valores de alpha
-     * @param iterations Iterações por valor de alpha
-     * @return Vetor com as melhores soluções para cada alpha
-     */
-    std::vector<Solution> tuneAlpha(int iterations = 10);
+    Solution solve(int iterations = 100, double alpha = 0.3);
 
     /**
      * @brief Define nova semente para o gerador aleatório

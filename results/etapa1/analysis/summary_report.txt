@@ -1,158 +1,41 @@
 ======================================================================
-RELATÓRIO DE RESULTADOS - ETAPA 1
-Heurísticas Construtivas para o DCKP
+DCKP HEURISTICS - COMPREHENSIVE ANALYSIS REPORT
 ======================================================================
 
-Total de experimentos: 250
-Número de instâncias: 50
-Número de métodos: 5
-Métodos testados: GRASP_MultiStart_100_alpha0.300000, Greedy_MaxProfit, Greedy_MaxProfitWeight, Greedy_MinConflicts, Greedy_MinWeight
-
+1. EXPERIMENT OVERVIEW
 ----------------------------------------------------------------------
-ESTATÍSTICAS GLOBAIS
+   Total experiments: 500
+   Unique instances:  100
+   Methods tested:    5
+   Methods: GRASP_100_0.3, Greedy_MaxProfit, Greedy_MaxProfitWeight, Greedy_MinConflicts, Greedy_MinWeight
+
+2. BEST METHOD IDENTIFICATION
 ----------------------------------------------------------------------
-Melhor valor encontrado: 6884
-  Método: Greedy_MaxProfit
-  Instância: 5I1
+   Ranking by Average Gap (lower is better):
+      1. Greedy_MaxProfit: 0.0000%
+      2. Greedy_MinConflicts: 27.7131%
+      3. GRASP_100_0.3: 54.3487%
+      4. Greedy_MaxProfitWeight: 69.7350%
+      5. Greedy_MinWeight: 69.8491%
 
-Valor médio geral: 2314.00
-Desvio padrão geral: 1567.44
+   Wins (best on instance):
+      Greedy_MaxProfit: 100 (100.0%)
 
-Tempo médio de execução: 0.1709s
-Tempo mínimo: 0.0000s
-Tempo máximo: 2.3125s
-
+3. TIME ANALYSIS
 ----------------------------------------------------------------------
-DESEMPENHO POR MÉTODO
+   Method                               Mean        Std        Min        Max
+   ------------------------------------------------------------------
+   GRASP_100_0.3                    2.074239   2.891054  -2.107858  13.269715
+   Greedy_MaxProfit                 0.000605   0.000454   0.000052   0.002248
+   Greedy_MaxProfitWeight           0.000496   0.000419   0.000028   0.001859
+   Greedy_MinConflicts              0.000565   0.000393   0.000070   0.001811
+   Greedy_MinWeight                 0.000534   0.000429   0.000036   0.001808
+
+4. STATISTICAL SIGNIFICANCE
 ----------------------------------------------------------------------
-
-Método: GRASP_MultiStart_100_alpha0.300000
-  Valor médio: 1928.96
-  Valor mediano: 2077.50
-  Desvio padrão: 933.79
-  Coef. variação: 48.41%
-  Melhor valor: 3525
-  Pior valor: 390
-  Tempo médio: 0.8534s
-  Tempo desvio padrão: 0.7242s
-  Itens médios: 47.9
-  Itens desvio padrão: 23.08
-
-Método: Greedy_MaxProfit
-  Valor médio: 3928.10
-  Valor mediano: 4272.50
-  Desvio padrão: 1904.95
-  Coef. variação: 48.50%
-  Melhor valor: 6884
-  Pior valor: 859
-  Tempo médio: 0.0003s
-  Tempo desvio padrão: 0.0002s
-  Itens médios: 44.3
-  Itens desvio padrão: 22.01
-
-Método: Greedy_MaxProfitWeight
-  Valor médio: 1400.58
-  Valor mediano: 1521.00
-  Desvio padrão: 720.87
-  Coef. variação: 51.47%
-  Melhor valor: 2685
-  Pior valor: 207
-  Tempo médio: 0.0002s
-  Tempo desvio padrão: 0.0001s
-  Itens médios: 43.0
-  Itens desvio padrão: 20.81
-
-Método: Greedy_MinConflicts
-  Valor médio: 2921.16
-  Valor mediano: 3045.00
-  Desvio padrão: 1429.19
-  Coef. variação: 48.93%
-  Melhor valor: 5519
-  Pior valor: 645
-  Tempo médio: 0.0003s
-  Tempo desvio padrão: 0.0002s
-  Itens médios: 48.6
-  Itens desvio padrão: 24.37
-
-Método: Greedy_MinWeight
-  Valor médio: 1391.18
-  Valor mediano: 1385.00
-  Desvio padrão: 718.01
-  Coef. variação: 51.61%
-  Melhor valor: 2685
-  Pior valor: 207
-  Tempo médio: 0.0002s
-  Tempo desvio padrão: 0.0001s
-  Itens médios: 43.0
-  Itens desvio padrão: 20.79
-
-----------------------------------------------------------------------
-RANKING DE MÉTODOS (por valor médio)
-----------------------------------------------------------------------
-1. Greedy_MaxProfit: 3928.10
-2. Greedy_MinConflicts: 2921.16
-3. GRASP_MultiStart_100_alpha0.300000: 1928.96
-4. Greedy_MaxProfitWeight: 1400.58
-5. Greedy_MinWeight: 1391.18
-
-----------------------------------------------------------------------
-ANÁLISE DE DOMINÂNCIA
-----------------------------------------------------------------------
-Número de vezes que cada método obteve o melhor resultado:
-  Greedy_MaxProfit: 50 (100.0%)
-
-----------------------------------------------------------------------
-ANÁLISE DE GAP EM RELAÇÃO AO MELHOR
-----------------------------------------------------------------------
-
-Gap médio (%) por método:
-  GRASP_MultiStart_100_alpha0.300000:
-    Média: 50.91%
-    Desvio padrão: 7.58%
-    Mínimo: 29.76%
-    Máximo: 70.34%
-  Greedy_MaxProfit:
-    Média: 0.00%
-    Desvio padrão: 0.00%
-    Mínimo: 0.00%
-    Máximo: 0.00%
-  Greedy_MaxProfitWeight:
-    Média: 64.82%
-    Desvio padrão: 6.80%
-    Mínimo: 49.21%
-    Máximo: 80.38%
-  Greedy_MinConflicts:
-    Média: 24.96%
-    Desvio padrão: 9.12%
-    Mínimo: 2.44%
-    Máximo: 44.21%
-  Greedy_MinWeight:
-    Média: 65.05%
-    Desvio padrão: 6.40%
-    Mínimo: 49.21%
-    Máximo: 80.38%
+   Friedman test p-value: 0.000000 (SIGNIFICANT)
+   Best method: Greedy_MaxProfit
 
 ======================================================================
-OBSERVAÇÕES E CONCLUSÕES
-======================================================================
-
-1. MELHOR MÉTODO GERAL: Greedy_MaxProfit
-   - Maior valor médio: 3928.10
-   - Venceu em 50 de 50 instâncias
-
-2. MÉTODO MAIS RÁPIDO: Greedy_MaxProfitWeight
-   - Tempo médio: 0.0002s
-
-3. ANÁLISE DE TRADE-OFF:
-   GRASP_MultiStart_100_alpha0.300000:
-     - Eficiência (Valor/Tempo): 2260.04
-   Greedy_MaxProfit:
-     - Eficiência (Valor/Tempo): 10094829.36
-   Greedy_MaxProfitWeight:
-     - Eficiência (Valor/Tempo): 4607777.34
-   Greedy_MinConflicts:
-     - Eficiência (Valor/Tempo): 6959782.71
-   Greedy_MinWeight:
-     - Eficiência (Valor/Tempo): 4418688.86
-
+Report generated successfully.
 ======================================================================
