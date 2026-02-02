@@ -4,6 +4,9 @@
  *
  * Implementa diferentes estratégias gulosas para construir
  * soluções viáveis do problema DCKP.
+ *
+ * @author Thalles e Luiz
+ * @version 2.0
  */
 
 #ifndef GREEDY_H
@@ -12,6 +15,9 @@
 #include "../utils/instance_reader.h"
 #include "../utils/solution.h"
 #include "../utils/validator.h"
+
+#include <string>
+#include <string_view>
 #include <vector>
 
 /**
@@ -35,9 +41,36 @@ enum class GreedyStrategy
  */
 class GreedyConstructive
 {
+public:
+    /**
+     * @brief Construtor
+     * @param inst Referência para a instância do problema
+     */
+    explicit GreedyConstructive(const DCKPInstance &inst) noexcept;
+
+    /**
+     * @brief Constrói uma solução usando estratégia gulosa
+     * @param strategy Estratégia de construção
+     * @return Solução construída
+     */
+    [[nodiscard]] Solution construct(GreedyStrategy strategy);
+
+    /**
+     * @brief Constrói soluções com todas as estratégias
+     * @return Vetor com todas as soluções geradas
+     */
+    [[nodiscard]] std::vector<Solution> constructAll();
+
+    /**
+     * @brief Converte estratégia para string
+     * @param strategy Estratégia
+     * @return Nome da estratégia
+     */
+    [[nodiscard]] static std::string_view strategyToString(GreedyStrategy strategy) noexcept;
+
 private:
-    const DCKPInstance &instance; ///< Referência para a instância
-    Validator validator;          ///< Validador de soluções
+    const DCKPInstance &instance_; ///< Referência para a instância
+    Validator validator_;          ///< Validador de soluções
 
     /**
      * @brief Estrutura auxiliar para ordenação de itens
@@ -47,7 +80,7 @@ private:
         int item_id;
         double score;
 
-        bool operator>(const ItemScore &other) const
+        [[nodiscard]] bool operator>(const ItemScore &other) const noexcept
         {
             return score > other.score;
         }
@@ -59,41 +92,14 @@ private:
      * @param strategy Estratégia de scoring
      * @return Score calculado
      */
-    double calculateScore(int item, GreedyStrategy strategy) const;
+    [[nodiscard]] double calculateScore(int item, GreedyStrategy strategy) const noexcept;
 
     /**
      * @brief Ordena itens pela estratégia escolhida
      * @param strategy Estratégia de ordenação
      * @return Vetor de itens ordenados
      */
-    std::vector<int> sortItemsByStrategy(GreedyStrategy strategy) const;
-
-public:
-    /**
-     * @brief Construtor
-     * @param inst Referência para a instância do problema
-     */
-    explicit GreedyConstructive(const DCKPInstance &inst);
-
-    /**
-     * @brief Constrói uma solução usando estratégia gulosa
-     * @param strategy Estratégia de construção
-     * @return Solução construída
-     */
-    Solution construct(GreedyStrategy strategy);
-
-    /**
-     * @brief Constrói soluções com todas as estratégias
-     * @return Vetor com todas as soluções geradas
-     */
-    std::vector<Solution> constructAll();
-
-    /**
-     * @brief Converte estratégia para string
-     * @param strategy Estratégia
-     * @return Nome da estratégia
-     */
-    static std::string strategyToString(GreedyStrategy strategy);
+    [[nodiscard]] std::vector<int> sortItemsByStrategy(GreedyStrategy strategy) const;
 };
 
 #endif // GREEDY_H

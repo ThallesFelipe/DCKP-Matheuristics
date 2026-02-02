@@ -4,6 +4,9 @@
  *
  * Implementa a metaheurística GRASP (Greedy Randomized Adaptive Search Procedure)
  * na fase construtiva, com lista restrita de candidatos (RCL).
+ *
+ * @author Thalles e Luiz
+ * @version 2.0
  */
 
 #ifndef GRASP_H
@@ -12,8 +15,9 @@
 #include "../utils/instance_reader.h"
 #include "../utils/solution.h"
 #include "../utils/validator.h"
-#include <vector>
+
 #include <random>
+#include <vector>
 
 /**
  * @class GRASPConstructive
@@ -21,13 +25,39 @@
  *
  * Constrói soluções usando aleatoriedade controlada através de uma
  * Lista Restrita de Candidatos (RCL), permitindo maior diversificação.
+ *
+ * @note Usa Mersenne Twister (std::mt19937) para geração de números aleatórios.
  */
 class GRASPConstructive
 {
+public:
+    /**
+     * @brief Construtor
+     * @param inst Referência para a instância do problema
+     * @param seed Semente para o gerador aleatório (default: 42)
+     */
+    explicit GRASPConstructive(const DCKPInstance &inst, unsigned int seed = 42) noexcept;
+
+    /**
+     * @brief Executa múltiplas iterações do GRASP
+     * @param iterations Número de iterações (default: 100)
+     * @param alpha Parâmetro de controle da aleatoriedade [0, 1] (default: 0.3)
+     * @return Melhor solução encontrada
+     *
+     * @note alpha=0 → guloso puro; alpha=1 → totalmente aleatório
+     */
+    [[nodiscard]] Solution solve(int iterations = 100, double alpha = 0.3);
+
+    /**
+     * @brief Define nova semente para o gerador aleatório
+     * @param seed Nova semente
+     */
+    void setSeed(unsigned int seed) noexcept;
+
 private:
-    const DCKPInstance &instance; ///< Referência para a instância
-    Validator validator;          ///< Validador de soluções
-    std::mt19937 rng;             ///< Gerador de números aleatórios
+    const DCKPInstance &instance_; ///< Referência para a instância
+    Validator validator_;          ///< Validador de soluções
+    std::mt19937 rng_;             ///< Gerador de números aleatórios (Mersenne Twister)
 
     /**
      * @brief Estrutura para armazenar candidatos
@@ -37,7 +67,7 @@ private:
         int item_id;
         double score;
 
-        bool operator>(const Candidate &other) const
+        [[nodiscard]] bool operator>(const Candidate &other) const noexcept
         {
             return score > other.score;
         }
@@ -49,7 +79,7 @@ private:
      * @param current_solution Solução parcial atual
      * @return Score calculado
      */
-    double calculateScore(int item, const Solution &current_solution) const;
+    [[nodiscard]] double calculateScore(int item, const Solution &current_solution) const noexcept;
 
     /**
      * @brief Constrói a Lista Restrita de Candidatos
@@ -57,43 +87,21 @@ private:
      * @param alpha Parâmetro de controle da RCL (0 = guloso, 1 = aleatório)
      * @return Vetor de candidatos na RCL
      */
-    std::vector<int> buildRCL(const Solution &current_solution, double alpha) const;
+    [[nodiscard]] std::vector<int> buildRCL(const Solution &current_solution, double alpha) const;
 
     /**
      * @brief Seleciona aleatoriamente um item da RCL
      * @param rcl Lista Restrita de Candidatos
-     * @return Índice do item selecionado
+     * @return Índice do item selecionado, ou -1 se RCL vazia
      */
-    int selectFromRCL(const std::vector<int> &rcl);
+    [[nodiscard]] int selectFromRCL(const std::vector<int> &rcl);
 
     /**
      * @brief Constrói uma única solução usando o procedimento GRASP
      * @param alpha Parâmetro de controle da aleatoriedade [0, 1]
      * @return Solução construída
      */
-    Solution constructSolution(double alpha);
-
-public:
-    /**
-     * @brief Construtor
-     * @param inst Referência para a instância do problema
-     * @param seed Semente para o gerador aleatório
-     */
-    explicit GRASPConstructive(const DCKPInstance &inst, unsigned int seed = 42);
-
-    /**
-     * @brief Executa múltiplas iterações do GRASP
-     * @param iterations Número de iterações
-     * @param alpha Parâmetro de controle da aleatoriedade
-     * @return Melhor solução encontrada
-     */
-    Solution solve(int iterations = 100, double alpha = 0.3);
-
-    /**
-     * @brief Define nova semente para o gerador aleatório
-     * @param seed Nova semente
-     */
-    void setSeed(unsigned int seed);
+    [[nodiscard]] Solution constructSolution(double alpha);
 };
 
 #endif // GRASP_H

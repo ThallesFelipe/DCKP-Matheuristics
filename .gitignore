@@ -30,8 +30,3 @@ Thumbs.db
 # Temp
 *.tmp
 *.log
-
-# Analysis outputs
-results/etapa1/analysis/
-results/etapa2/analysis/
-results/

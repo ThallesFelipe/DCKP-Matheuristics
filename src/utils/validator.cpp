@@ -1,34 +1,40 @@
 /**
  * @file validator.cpp
- * @brief Implementacao da classe Validator
+ * @brief Implementação da classe Validator
  */
 
 #include "validator.h"
-#include <sstream>
-#include <iostream>
 
-Validator::Validator(const DCKPInstance &inst) : instance(inst) {}
+#include <iostream>
+#include <sstream>
+#include <vector>
+
+Validator::Validator(const DCKPInstance &inst) noexcept
+    : instance_(inst) {}
 
 bool Validator::validate(Solution &solution) const
 {
     bool valid = true;
 
-    if (solution.total_weight > instance.capacity)
+    // Verifica restrição de capacidade
+    if (solution.total_weight > instance_.capacity)
     {
         std::cerr << "Capacidade excedida: " << solution.total_weight
-                  << " > " << instance.capacity << std::endl;
+                  << " > " << instance_.capacity << '\n';
         valid = false;
     }
 
+    // Verifica restrições de conflitos
     std::vector<int> items(solution.selected_items.begin(), solution.selected_items.end());
-    for (size_t i = 0; i < items.size(); i++)
+    const auto n = items.size();
+    for (std::size_t i = 0; i < n; ++i)
     {
-        for (size_t j = i + 1; j < items.size(); j++)
+        for (std::size_t j = i + 1; j < n; ++j)
         {
-            if (instance.hasConflict(items[i], items[j]))
+            if (instance_.hasConflict(items[i], items[j]))
             {
                 std::cerr << "Conflito: " << (items[i] + 1)
-                          << " <-> " << (items[j] + 1) << std::endl;
+                          << " <-> " << (items[j] + 1) << '\n';
                 valid = false;
             }
         }
@@ -39,17 +45,19 @@ bool Validator::validate(Solution &solution) const
     return valid;
 }
 
-bool Validator::checkCapacity(int current_weight, int item_weight) const
+bool Validator::checkCapacity(int current_weight, int item_weight) const noexcept
 {
-    return (current_weight + item_weight) <= instance.capacity;
+    return (current_weight + item_weight) <= instance_.capacity;
 }
 
-bool Validator::checkConflicts(int item, const std::set<int> &selected_items) const
+bool Validator::checkConflicts(int item, const std::set<int> &selected_items) const noexcept
 {
     for (int selected : selected_items)
     {
-        if (instance.hasConflict(item, selected))
+        if (instance_.hasConflict(item, selected))
+        {
             return false;
+        }
     }
     return true;
 }
@@ -59,20 +67,23 @@ std::string Validator::validateDetailed(const Solution &solution) const
     std::ostringstream ss;
 
     ss << "Itens: " << solution.selected_items.size()
-       << ", Peso: " << solution.total_weight << "/" << instance.capacity
+       << ", Peso: " << solution.total_weight << '/' << instance_.capacity
        << ", Lucro: " << solution.total_profit;
 
-    bool capacity_ok = solution.total_weight <= instance.capacity;
+    const bool capacity_ok = solution.total_weight <= instance_.capacity;
     ss << " | Capacidade: " << (capacity_ok ? "OK" : "VIOLADA");
 
     int conflict_count = 0;
     std::vector<int> items(solution.selected_items.begin(), solution.selected_items.end());
-    for (size_t i = 0; i < items.size(); i++)
+    const auto n = items.size();
+    for (std::size_t i = 0; i < n; ++i)
     {
-        for (size_t j = i + 1; j < items.size(); j++)
+        for (std::size_t j = i + 1; j < n; ++j)
         {
-            if (instance.hasConflict(items[i], items[j]))
-                conflict_count++;
+            if (instance_.hasConflict(items[i], items[j]))
+            {
+                ++conflict_count;
+            }
         }
     }
 
@@ -82,16 +93,17 @@ std::string Validator::validateDetailed(const Solution &solution) const
     return ss.str();
 }
 
-void Validator::recalculateMetrics(Solution &solution) const
+void Validator::recalculateMetrics(Solution &solution) const noexcept
 {
-    int profit = 0, weight = 0;
+    int profit = 0;
+    int weight = 0;
 
     for (int item : solution.selected_items)
     {
-        if (item >= 0 && item < instance.n_items)
+        if (item >= 0 && item < instance_.n_items)
         {
-            profit += instance.profits[item];
-            weight += instance.weights[item];
+            profit += instance_.profits[item];
+            weight += instance_.weights[item];
         }
     }
 
