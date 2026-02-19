@@ -75,6 +75,8 @@ set(DCKP_SOURCES
     src/constructive/grasp.cpp
     src/local_search/hill_climbing.cpp
     src/local_search/vnd.cpp
+    src/metaheuristics/ils.cpp
+    src/metaheuristics/vns.cpp
 )
 
 set(DCKP_HEADERS
@@ -85,6 +87,8 @@ set(DCKP_HEADERS
     src/constructive/grasp.h
     src/local_search/hill_climbing.h
     src/local_search/vnd.h
+    src/metaheuristics/ils.h
+    src/metaheuristics/vns.h
 )
 
 # ==============================================================================

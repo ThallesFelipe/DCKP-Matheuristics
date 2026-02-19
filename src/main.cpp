@@ -1,12 +1,13 @@
 /**
  * @file main.cpp
- * @brief Programa principal para experimentos com heurísticas e buscas locais do DCKP
+ * @brief Programa principal para experimentos com heurísticas, buscas locais e metaheurísticas do DCKP
  *
  * Este programa implementa um solver para o Disjunctively Constrained Knapsack Problem
- * usando heurísticas construtivas (Greedy, GRASP) e buscas locais (Hill Climbing, VND).
+ * usando heurísticas construtivas (Greedy, GRASP), buscas locais (Hill Climbing, VND)
+ * e metaheurísticas (ILS, VNS).
  *
  * @author Thalles e Luiz
- * @version 2.0
+ * @version 3.0
  */
 
 #include <algorithm>
@@ -25,6 +26,8 @@
 #include "constructive/greedy.h"
 #include "local_search/hill_climbing.h"
 #include "local_search/vnd.h"
+#include "metaheuristics/ils.h"
+#include "metaheuristics/vns.h"
 #include "utils/instance_reader.h"
 #include "utils/solution.h"
 #include "utils/validator.h"
@@ -42,6 +45,13 @@ namespace config
     constexpr int HILL_CLIMBING_MAX_ITER = 100;
     constexpr int VND_MAX_ITER = 1000;
     constexpr int CSV_TIME_PRECISION = 6;
+
+    // Etapa 3 - Metaheurísticas
+    constexpr int ILS_MAX_ITERATIONS = 100;
+    constexpr int ILS_PERTURBATION_STRENGTH = 3;
+    constexpr int VNS_MAX_ITERATIONS = 100;
+    constexpr int VNS_K_MAX = 3;
+    constexpr int VNS_SHAKE_STRENGTH = 2;
 }
 
 // ============================================================================
@@ -206,6 +216,24 @@ void printSeparator(char ch = '-', int width = 40)
     VND vnd(instance);
     Solution vnd_sol = vnd.solve(grasp_sol, config::VND_MAX_ITER);
     results.push_back(solutionToResult(name, vnd_sol));
+
+    // ETAPA 3: Metaheurísticas
+    std::cout << "\n--- ETAPA 3: Metaheuristicas ---\n";
+
+    // ILS
+    std::cout << "\n[ILS]\n";
+    ILS ils(instance);
+    Solution ils_sol = ils.solve(grasp_sol, config::ILS_MAX_ITERATIONS,
+                                 config::ILS_PERTURBATION_STRENGTH, config::VND_MAX_ITER);
+    results.push_back(solutionToResult(name, ils_sol));
+
+    // VNS
+    std::cout << "\n[VNS]\n";
+    VNS vns(instance);
+    Solution vns_sol = vns.solve(grasp_sol, config::VNS_MAX_ITERATIONS,
+                                 config::VNS_K_MAX, config::VNS_SHAKE_STRENGTH,
+                                 config::VND_MAX_ITER);
+    results.push_back(solutionToResult(name, vns_sol));
 
     // Resumo
     auto best = std::ranges::max_element(results, {},
@@ -389,6 +417,68 @@ void processDirectoryEtapa2(const std::string &dir_path, const std::string &outp
     processDirectoryGeneric(dir_path, output_csv, "ETAPA 2 - Buscas Locais", processInstanceEtapa2);
 }
 
+/**
+ * @brief Processa instância executando apenas Etapa 3 (Metaheurísticas)
+ * @note Utiliza GRASP para gerar solução inicial e aplica ILS + VNS
+ */
+[[nodiscard]] std::vector<ExperimentResult> processInstanceEtapa3(
+    const std::string &path,
+    const std::string &name)
+{
+    std::vector<ExperimentResult> results;
+    results.reserve(3);
+
+    printSeparator();
+    std::cout << "Instancia: " << name << '\n';
+    printSeparator();
+
+    DCKPInstance instance;
+    if (!instance.readFromFile(path))
+    {
+        std::cerr << "Falha ao carregar: " << path << '\n';
+        return results;
+    }
+
+    instance.print();
+    std::cout << "\n--- ETAPA 3: Metaheuristicas ---\n";
+
+    // GRASP para gerar solução inicial
+    std::cout << "\n[GRASP - Solucao Inicial]\n";
+    GRASPConstructive grasp(instance);
+    Solution grasp_sol = grasp.solve(config::GRASP_ITERATIONS, config::GRASP_ALPHA);
+    results.push_back({name, "GRASP_Inicial", grasp_sol.total_profit, grasp_sol.total_weight,
+                       grasp_sol.size(), grasp_sol.computation_time, grasp_sol.is_feasible});
+
+    // ILS
+    std::cout << "\n[ILS]\n";
+    ILS ils(instance);
+    Solution ils_sol = ils.solve(grasp_sol, config::ILS_MAX_ITERATIONS,
+                                 config::ILS_PERTURBATION_STRENGTH, config::VND_MAX_ITER);
+    results.push_back(solutionToResult(name, ils_sol));
+
+    // VNS
+    std::cout << "\n[VNS]\n";
+    VNS vns(instance);
+    Solution vns_sol = vns.solve(grasp_sol, config::VNS_MAX_ITERATIONS,
+                                 config::VNS_K_MAX, config::VNS_SHAKE_STRENGTH,
+                                 config::VND_MAX_ITER);
+    results.push_back(solutionToResult(name, vns_sol));
+
+    // Resumo
+    auto best = std::ranges::max_element(results, {},
+                                         [](const ExperimentResult &r)
+                                         { return r.profit; });
+
+    std::cout << "\nMelhor (Etapa 3): " << best->method << " = " << best->profit << '\n';
+
+    return results;
+}
+
+void processDirectoryEtapa3(const std::string &dir_path, const std::string &output_csv)
+{
+    processDirectoryGeneric(dir_path, output_csv, "ETAPA 3 - Metaheuristicas", processInstanceEtapa3);
+}
+
 // ============================================================================
 // Interface de Linha de Comando
 // ============================================================================
@@ -400,19 +490,21 @@ void printUsage(std::string_view prog)
               << "  single <arquivo> [csv]          Processa uma instancia (todas as etapas)\n"
               << "  batch <diretorio> <csv>         Processa todas as instancias (todas as etapas)\n"
               << "  batch-etapa1 <diretorio> <csv>  Processa apenas Etapa 1 (Greedy + GRASP)\n"
-              << "  batch-etapa2 <diretorio> <csv>  Processa apenas Etapa 2 (GRASP + HC + VND)\n\n"
+              << "  batch-etapa2 <diretorio> <csv>  Processa apenas Etapa 2 (GRASP + HC + VND)\n"
+              << "  batch-etapa3 <diretorio> <csv>  Processa apenas Etapa 3 (GRASP + ILS + VNS)\n\n"
               << "Exemplos:\n"
               << "  " << prog << " single DCKP-instances/.../1I1\n"
               << "  " << prog << " batch DCKP-instances/... results/results.csv\n"
               << "  " << prog << " batch-etapa1 DCKP-instances/... results/etapa1/results.csv\n"
-              << "  " << prog << " batch-etapa2 DCKP-instances/... results/etapa2/results.csv\n";
+              << "  " << prog << " batch-etapa2 DCKP-instances/... results/etapa2/results.csv\n"
+              << "  " << prog << " batch-etapa3 DCKP-instances/... results/etapa3/results.csv\n";
 }
 
 void printBanner()
 {
     std::cout << "========================================\n"
-              << "DCKP Solver v2.0\n"
-              << "Heuristicas e Buscas Locais\n"
+              << "DCKP Solver v3.0\n"
+              << "Heuristicas, Buscas Locais e Metaheuristicas\n"
               << "========================================\n";
 }
 
@@ -467,6 +559,15 @@ int main(int argc, char *argv[])
                 fs::create_directories(csv_path.parent_path());
             }
             processDirectoryEtapa2(argv[2], argv[3]);
+        }
+        else if (mode == "batch-etapa3" && argc >= 4)
+        {
+            const fs::path csv_path(argv[3]);
+            if (csv_path.has_parent_path())
+            {
+                fs::create_directories(csv_path.parent_path());
+            }
+            processDirectoryEtapa3(argv[2], argv[3]);
         }
         else
         {

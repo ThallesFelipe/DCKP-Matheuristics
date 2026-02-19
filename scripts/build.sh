@@ -61,6 +61,20 @@ if [ ! -d "$BUILD_DIR" ]; then
     mkdir -p "$BUILD_DIR"
 fi
 
+# Detectar cache CMake incompatível (ex.: cache gerado no Windows)
+CACHE_FILE="$BUILD_DIR/CMakeCache.txt"
+if [ -f "$CACHE_FILE" ]; then
+    CACHE_HOME_DIR=$(grep -E '^CMAKE_HOME_DIRECTORY:INTERNAL=' "$CACHE_FILE" | cut -d'=' -f2- || true)
+    CACHE_BUILD_DIR=$(grep -E '^CMAKE_CACHEFILE_DIR:INTERNAL=' "$CACHE_FILE" | cut -d'=' -f2- || true)
+
+    if { [ -n "$CACHE_HOME_DIR" ] && [ "$CACHE_HOME_DIR" != "$PROJECT_DIR" ]; } ||
+       { [ -n "$CACHE_BUILD_DIR" ] && [ "$CACHE_BUILD_DIR" != "$BUILD_DIR" ]; }; then
+        print_step "Cache CMake incompativel detectado (Windows/WSL). Recriando diretorio de build..."
+        rm -rf "$BUILD_DIR"
+        mkdir -p "$BUILD_DIR"
+    fi
+fi
+
 cd "$BUILD_DIR"
 
 # Configurar CMake

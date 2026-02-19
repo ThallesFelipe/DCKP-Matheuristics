@@ -58,7 +58,8 @@ try {
     # Compilar
     Write-Step "Compilando..."
     $jobs = [Environment]::ProcessorCount
-    cmake --build . --config Release -- -j$jobs
+    if ($jobs -lt 1) { $jobs = 1 }
+    cmake --build . --config Release -j $jobs
 
     if ($LASTEXITCODE -ne 0) {
         throw "Falha na compilacao!"

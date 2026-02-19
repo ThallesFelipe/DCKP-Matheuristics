@@ -1,9 +1,9 @@
 # Script para executar experimentos com instancias do DCKP
-# Suporta execução separada de Etapa 1 (Construtivas) e Etapa 2 (Buscas Locais)
+# Suporta execução separada de Etapa 1 (Construtivas), Etapa 2 (Buscas Locais) e Etapa 3 (Metaheurísticas)
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("etapa1", "etapa2", "ambas", "")]
+    [ValidateSet("etapa1", "etapa2", "etapa3", "todas", "ambas", "")]
     [string]$Etapa = "",
     [switch]$Set1Only,
     [switch]$Set2Only
@@ -27,13 +27,17 @@ if (!(Test-Path "results\etapa1")) {
 if (!(Test-Path "results\etapa2")) {
     New-Item -ItemType Directory -Path "results\etapa2" -Force | Out-Null
 }
+if (!(Test-Path "results\etapa3")) {
+    New-Item -ItemType Directory -Path "results\etapa3" -Force | Out-Null
+}
 
 function Show-Menu {
     Write-Host "`nEscolha o modo de execucao:" -ForegroundColor Yellow
     Write-Host "  1) Etapa 1 - Heuristicas Construtivas (Greedy + GRASP)"
     Write-Host "  2) Etapa 2 - Buscas Locais (GRASP + HC + VND)"
-    Write-Host "  3) Ambas Etapas"
-    Write-Host "  4) Teste rapido (1 instancia)"
+    Write-Host "  3) Etapa 3 - Metaheuristicas (GRASP + ILS + VNS)"
+    Write-Host "  4) Todas as Etapas"
+    Write-Host "  5) Teste rapido (1 instancia)"
     Write-Host "  0) Sair"
     Write-Host ""
     $choice = Read-Host "Opcao"
@@ -92,14 +96,47 @@ function Run-Etapa2 {
     Write-Host "========================================" -ForegroundColor Green
 }
 
+function Run-Etapa3 {
+    param([bool]$OnlySet1, [bool]$OnlySet2)
+    
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "ETAPA 3 - Metaheuristicas" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    
+    if (!$OnlySet2) {
+        Write-Host "`n--- Processando I1-I10 (Etapa 3) ---" -ForegroundColor Yellow
+        & $executable batch-etapa3 "DCKP-instances\DCKP-instances-set I-100\I1 - I10" "results\etapa3\results_I1_I10.csv"
+        
+        Write-Host "`n--- Processando I11-I20 (Etapa 3) ---" -ForegroundColor Yellow
+        & $executable batch-etapa3 "DCKP-instances\DCKP-instances-set I-100\I11 - I20" "results\etapa3\results_I11_I20.csv"
+    }
+    
+    if (!$OnlySet1) {
+        Write-Host "`n--- Set II (Etapa 3) requer execucao via Makefile ---" -ForegroundColor Yellow
+        Write-Host "Use: make run-etapa3-set2" -ForegroundColor Yellow
+    }
+    
+    Write-Host "`n========================================" -ForegroundColor Green
+    Write-Host "ETAPA 3 Concluida!" -ForegroundColor Green
+    Write-Host "Resultados em: results\etapa3\" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Green
+}
+
 # Se parametro foi passado, executar diretamente
 if ($Etapa -ne "") {
     switch ($Etapa) {
         "etapa1" { Run-Etapa1 -OnlySet1:$Set1Only -OnlySet2:$Set2Only }
         "etapa2" { Run-Etapa2 -OnlySet1:$Set1Only -OnlySet2:$Set2Only }
+        "etapa3" { Run-Etapa3 -OnlySet1:$Set1Only -OnlySet2:$Set2Only }
+        "todas" {
+            Run-Etapa1 -OnlySet1:$Set1Only -OnlySet2:$Set2Only
+            Run-Etapa2 -OnlySet1:$Set1Only -OnlySet2:$Set2Only
+            Run-Etapa3 -OnlySet1:$Set1Only -OnlySet2:$Set2Only
+        }
         "ambas" {
             Run-Etapa1 -OnlySet1:$Set1Only -OnlySet2:$Set2Only
             Run-Etapa2 -OnlySet1:$Set1Only -OnlySet2:$Set2Only
+            Run-Etapa3 -OnlySet1:$Set1Only -OnlySet2:$Set2Only
         }
     }
     exit 0
@@ -114,11 +151,13 @@ $choice = Show-Menu
 switch ($choice) {
     "1" { Run-Etapa1 -OnlySet1:$false -OnlySet2:$false }
     "2" { Run-Etapa2 -OnlySet1:$false -OnlySet2:$false }
-    "3" {
+    "3" { Run-Etapa3 -OnlySet1:$false -OnlySet2:$false }
+    "4" {
         Run-Etapa1 -OnlySet1:$false -OnlySet2:$false
         Run-Etapa2 -OnlySet1:$false -OnlySet2:$false
+        Run-Etapa3 -OnlySet1:$false -OnlySet2:$false
     }
-    "4" {
+    "5" {
         Write-Host "`n--- Teste rapido concluido ---" -ForegroundColor Green
     }
     default {

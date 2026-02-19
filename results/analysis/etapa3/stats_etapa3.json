@@ -1,0 +1,72 @@
+{
+  "ils_vs_vns": {
+    "profit": {
+      "n": 100,
+      "mean_a": 11556.33,
+      "mean_b": 11716.8,
+      "median_diff": 56.0,
+      "mean_diff": 160.47,
+      "pvalue": 0.002698714389366311,
+      "cliffs_delta": 0.015,
+      "effect": "negligível",
+      "ci_low": 56.7775,
+      "ci_high": 271.9965,
+      "label_a": "ILS",
+      "label_b": "VNS"
+    },
+    "time": {
+      "n": 100,
+      "mean_a": 10.03178286,
+      "mean_b": 24.817446929999996,
+      "median_diff": -6.641980500000001,
+      "mean_diff": -14.785664069999997,
+      "pvalue": 3.8965598450959084e-18,
+      "cliffs_delta": -0.3824,
+      "effect": "médio",
+      "ci_low": -19.929677208750004,
+      "ci_high": -10.381815102749997,
+      "label_a": "ILS",
+      "label_b": "VNS"
+    },
+    "wins_profit": {
+      "ILS": 32,
+      "VNS": 59,
+      "Tie": 9
+    },
+    "wins_time": {
+      "ILS": 100,
+      "VNS": 0,
+      "Tie": 0
+    }
+  },
+  "stage_best": {
+    "Etapa3_vs_Etapa2": {
+      "comparison": "Etapa3_vs_Etapa2",
+      "n_instances": 100,
+      "mean_profit_gain_pct": 9.248252523601977,
+      "median_profit_gain_pct": 8.071091825914365,
+      "mean_time_ratio_stage3_over_other": 14.873475470868911,
+      "median_time_ratio_stage3_over_other": 13.408748269994188,
+      "profit_pvalue": 1.7651653711434732e-16,
+      "time_pvalue": 3.8965598450959084e-18,
+      "profit_cliffs_delta": 0.0676,
+      "time_cliffs_delta": -0.652,
+      "profit_effect": "negligível",
+      "time_effect": "grande"
+    },
+    "Etapa3_vs_Etapa1": {
+      "comparison": "Etapa3_vs_Etapa1",
+      "n_instances": 100,
+      "mean_profit_gain_pct": 10.40692898823693,
+      "median_profit_gain_pct": 9.874193311689943,
+      "mean_time_ratio_stage3_over_other": 21244.292776878458,
+      "median_time_ratio_stage3_over_other": 13954.55006182554,
+      "profit_pvalue": 7.115891930123243e-18,
+      "time_pvalue": 3.8965598450959084e-18,
+      "profit_cliffs_delta": 0.0713,
+      "time_cliffs_delta": -1.0,
+      "profit_effect": "negligível",
+      "time_effect": "grande"
+    }
+  }
+}

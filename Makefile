@@ -1,7 +1,7 @@
 # Makefile para o projeto DCKP
 # Para uso no Linux/WSL
 
-.PHONY: all build run test test-etapa2 analyze clean help menu \
+.PHONY: all build run test test-etapa2 test-etapa3 analyze clean help menu \
         run-set1 run-set2 run-all \
         run-I1-I10 run-I11-I20 \
         run-C1 run-C3 run-C10 run-C15 \
@@ -9,10 +9,13 @@
         run-all-C run-all-R \
         run-etapa1 run-etapa1-set1 run-etapa1-set2 \
         run-etapa2 run-etapa2-set1 run-etapa2-set2 \
+        run-etapa3 run-etapa3-set1 run-etapa3-set2 \
         run-all-etapas run-all-etapas-set1 run-all-etapas-set2 \
         run-I1-I10-etapa1 run-I11-I20-etapa1 \
         run-I1-I10-etapa2 run-I11-I20-etapa2 \
-        run-C1-etapa1 run-C1-etapa2 run-R1-etapa1 run-R1-etapa2 \
+        run-I1-I10-etapa3 run-I11-I20-etapa3 \
+        run-C1-etapa1 run-C1-etapa2 run-C1-etapa3 \
+        run-R1-etapa1 run-R1-etapa2 run-R1-etapa3 \
         single compare
 
 # Configurações
@@ -21,6 +24,7 @@ BIN_DIR = $(BUILD_DIR)/bin
 EXECUTABLE = $(BIN_DIR)/dckp_solver
 RESULTS_DIR_ETAPA1 = results/etapa1
 RESULTS_DIR_ETAPA2 = results/etapa2
+RESULTS_DIR_ETAPA3 = results/etapa3
 
 # Diretórios de instâncias - Set I (100 instâncias)
 SET1_DIR = DCKP-instances/DCKP-instances-set I-100
@@ -71,6 +75,11 @@ menu:
 	@echo "  $(GREEN)make run-etapa2-set1$(NC)     → Executar Etapa 2 no Set I"
 	@echo "  $(GREEN)make run-etapa2-set2$(NC)     → Executar Etapa 2 no Set II"
 	@echo ""
+	@echo "  $(CYAN)[Etapa 3 - Metaheurísticas (GRASP + ILS + VNS)]$(NC)"
+	@echo "  $(GREEN)make run-etapa3$(NC)          → Executar Etapa 3 em TODOS os sets"
+	@echo "  $(GREEN)make run-etapa3-set1$(NC)     → Executar Etapa 3 no Set I"
+	@echo "  $(GREEN)make run-etapa3-set2$(NC)     → Executar Etapa 3 no Set II"
+	@echo ""
 	@echo "  $(CYAN)[Ambas Etapas]$(NC)"
 	@echo "  $(GREEN)make run-all-etapas$(NC)      → Executar Etapa 1 + Etapa 2 (todos os sets)"
 	@echo "  $(GREEN)make run-all-etapas-set1$(NC) → Executar ambas etapas no Set I"
@@ -120,8 +129,9 @@ menu:
 	@echo "      Exemplo: make single FILE=\"DCKP-instances/DCKP-instances-set I-100/I1 - I10/1I1\""
 	@echo ""
 	@echo "  $(GREEN)make build$(NC)               → Compilar o projeto"
-	@echo "  $(GREEN)make test$(NC)                → Teste rápido Etapa 1+2 (1 instância)"
+	@echo "  $(GREEN)make test$(NC)                → Teste rápido Etapa 1+2+3 (1 instância)"
 	@echo "  $(GREEN)make test-etapa2$(NC)         → Teste rápido apenas Etapa 2"
+	@echo "  $(GREEN)make test-etapa3$(NC)         → Teste rápido apenas Etapa 3"
 	@echo "  $(GREEN)make analyze$(NC)             → Analisar resultados"
 	@echo "  $(GREEN)make clean$(NC)               → Limpar build e resultados"
 	@echo "  $(GREEN)make help$(NC)                → Este menu"
@@ -131,6 +141,7 @@ menu:
 	@echo "$(BOLD)$(YELLOW)└─────────────────────────────────────────────────────────────────┘$(NC)"
 	@echo "  Etapa 1: $(CYAN)results/etapa1/$(NC)"
 	@echo "  Etapa 2: $(CYAN)results/etapa2/$(NC)"
+	@echo "  Etapa 3: $(CYAN)results/etapa3/$(NC)"
 	@echo ""
 
 help: menu
@@ -304,15 +315,93 @@ run-etapa2: run-etapa2-set1 run-etapa2-set2
 	@echo "$(GREEN)=== ETAPA 2 completa (todos os sets)! ===$(NC)"
 
 # ============================================================
+# ETAPA 3 - METAHEURÍSTICAS
+# ============================================================
+run-I1-I10-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: I1-I10 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_I1_I10)" "$(RESULTS_DIR_ETAPA3)/results_I1_I10.csv"
+	@echo "$(GREEN)=== Concluído: I1-I10 (Etapa 3) ===$(NC)"
+
+run-I11-I20-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: I11-I20 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_I11_I20)" "$(RESULTS_DIR_ETAPA3)/results_I11_I20.csv"
+	@echo "$(GREEN)=== Concluído: I11-I20 (Etapa 3) ===$(NC)"
+
+run-etapa3-set1: run-I1-I10-etapa3 run-I11-I20-etapa3
+	@echo "$(GREEN)=== Set I (Etapa 3) completo! ===$(NC)"
+
+run-C1-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: C1 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_C1)" "$(RESULTS_DIR_ETAPA3)/results_C1.csv"
+	@echo "$(GREEN)=== Concluído: C1 (Etapa 3) ===$(NC)"
+
+run-C3-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: C3 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_C3)" "$(RESULTS_DIR_ETAPA3)/results_C3.csv"
+	@echo "$(GREEN)=== Concluído: C3 (Etapa 3) ===$(NC)"
+
+run-C10-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: C10 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_C10)" "$(RESULTS_DIR_ETAPA3)/results_C10.csv"
+	@echo "$(GREEN)=== Concluído: C10 (Etapa 3) ===$(NC)"
+
+run-C15-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: C15 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_C15)" "$(RESULTS_DIR_ETAPA3)/results_C15.csv"
+	@echo "$(GREEN)=== Concluído: C15 (Etapa 3) ===$(NC)"
+
+run-R1-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: R1 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_R1)" "$(RESULTS_DIR_ETAPA3)/results_R1.csv"
+	@echo "$(GREEN)=== Concluído: R1 (Etapa 3) ===$(NC)"
+
+run-R3-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: R3 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_R3)" "$(RESULTS_DIR_ETAPA3)/results_R3.csv"
+	@echo "$(GREEN)=== Concluído: R3 (Etapa 3) ===$(NC)"
+
+run-R10-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: R10 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_R10)" "$(RESULTS_DIR_ETAPA3)/results_R10.csv"
+	@echo "$(GREEN)=== Concluído: R10 (Etapa 3) ===$(NC)"
+
+run-R15-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== ETAPA 3: R15 ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_R15)" "$(RESULTS_DIR_ETAPA3)/results_R15.csv"
+	@echo "$(GREEN)=== Concluído: R15 (Etapa 3) ===$(NC)"
+
+run-all-C-etapa3: run-C1-etapa3 run-C3-etapa3 run-C10-etapa3 run-C15-etapa3
+	@echo "$(GREEN)=== Todas as instâncias C (Etapa 3) concluídas! ===$(NC)"
+
+run-all-R-etapa3: run-R1-etapa3 run-R3-etapa3 run-R10-etapa3 run-R15-etapa3
+	@echo "$(GREEN)=== Todas as instâncias R (Etapa 3) concluídas! ===$(NC)"
+
+run-etapa3-set2: run-all-C-etapa3 run-all-R-etapa3
+	@echo "$(GREEN)=== Set II (Etapa 3) completo! ===$(NC)"
+
+run-etapa3: run-etapa3-set1
+	@echo "$(GREEN)=== ETAPA 3 completa (Set I apenas)! ===$(NC)"
+
+# ============================================================
 # AMBAS ETAPAS (SEQUENCIAL)
 # ============================================================
-run-all-etapas-set1: run-etapa1-set1 run-etapa2-set1
-	@echo "$(GREEN)=== Set I (Etapa 1 + Etapa 2) completo! ===$(NC)"
+run-all-etapas-set1: run-etapa1-set1 run-etapa2-set1 run-etapa3-set1
+	@echo "$(GREEN)=== Set I (Etapa 1 + Etapa 2 + Etapa 3) completo! ===$(NC)"
 
 run-all-etapas-set2: run-etapa1-set2 run-etapa2-set2
-	@echo "$(GREEN)=== Set II (Etapa 1 + Etapa 2) completo! ===$(NC)"
+	@echo "$(GREEN)=== Set II (Etapa 1 + Etapa 2) completo! (Etapa 3 apenas Set I) ===$(NC)"
 
-run-all-etapas: run-etapa1 run-etapa2
+run-all-etapas: run-etapa1 run-etapa2 run-etapa3
 	@echo "$(GREEN)=== Todas as etapas concluídas (todos os sets)! ===$(NC)"
 
 # ============================================================
@@ -418,6 +507,12 @@ test-etapa2: $(EXECUTABLE)
 	@./$(EXECUTABLE) batch-etapa2 "$(INSTANCES_I1_I10)/1I1" "$(RESULTS_DIR_ETAPA2)/test_etapa2.csv"
 	@echo "$(GREEN)=== Teste Etapa 2 concluído! ===$(NC)"
 
+test-etapa3: $(EXECUTABLE)
+	@echo "$(CYAN)=== Teste Rápido (Apenas Etapa 3 - Metaheurísticas) ===$(NC)"
+	@mkdir -p $(RESULTS_DIR_ETAPA3)
+	@./$(EXECUTABLE) batch-etapa3 "$(INSTANCES_I1_I10)/1I1" "$(RESULTS_DIR_ETAPA3)/test_etapa3.csv"
+	@echo "$(GREEN)=== Teste Etapa 3 concluído! ===$(NC)"
+
 single: $(EXECUTABLE)
 ifndef FILE
 	@echo "$(RED)Erro: Especifique o arquivo com FILE=<caminho>$(NC)"
@@ -450,6 +545,8 @@ clean:
 	@rm -rf $(RESULTS_DIR_ETAPA1)/analysis 2>/dev/null || true
 	@rm -f $(RESULTS_DIR_ETAPA2)/*.csv 2>/dev/null || true
 	@rm -rf $(RESULTS_DIR_ETAPA2)/analysis 2>/dev/null || true
+	@rm -f $(RESULTS_DIR_ETAPA3)/*.csv 2>/dev/null || true
+	@rm -rf $(RESULTS_DIR_ETAPA3)/analysis 2>/dev/null || true
 	@echo "$(GREEN)=== Limpeza concluída ===$(NC)"
 
 # Rebuild completo

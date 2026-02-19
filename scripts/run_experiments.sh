@@ -1,15 +1,16 @@
 #!/bin/bash
 # Script para executar experimentos com instancias do DCKP no Linux/WSL
-# Suporta execução separada de Etapa 1 (Construtivas) e Etapa 2 (Buscas Locais)
+# Suporta execução separada de Etapa 1 (Construtivas), Etapa 2 (Buscas Locais) e Etapa 3 (Metaheurísticas)
 #
 # Uso:
 #   ./scripts/run_experiments.sh              # Menu interativo
 #   ./scripts/run_experiments.sh etapa1       # Executar apenas Etapa 1
 #   ./scripts/run_experiments.sh etapa2       # Executar apenas Etapa 2
-#   ./scripts/run_experiments.sh ambas        # Executar ambas as etapas
+#   ./scripts/run_experiments.sh etapa3       # Executar apenas Etapa 3
+#   ./scripts/run_experiments.sh todas        # Executar todas as etapas
 #   ./scripts/run_experiments.sh --set1       # Apenas Set I
 #   ./scripts/run_experiments.sh --set2       # Apenas Set II
-#   ./scripts/run_experiments.sh etapa1 --set1  # Etapa 1 apenas Set I
+#   ./scripts/run_experiments.sh etapa3 --set1  # Etapa 3 apenas Set I
 
 set -e
 
@@ -41,6 +42,7 @@ fi
 # Criar diretórios de resultados
 mkdir -p results/etapa1
 mkdir -p results/etapa2
+mkdir -p results/etapa3
 
 # Parsear argumentos
 ETAPA=""
@@ -49,7 +51,7 @@ SET2_ONLY=false
 
 for arg in "$@"; do
     case $arg in
-        etapa1|etapa2|ambas)
+        etapa1|etapa2|etapa3|todas|ambas)
             ETAPA="$arg"
             ;;
         --set1)
@@ -121,14 +123,40 @@ run_etapa2() {
     echo -e "${GREEN}========================================${NC}"
 }
 
+# Função para executar Etapa 3 (apenas Set I)
+run_etapa3() {
+    echo ""
+    echo -e "${CYAN}========================================${NC}"
+    echo -e "${CYAN}ETAPA 3 - Metaheuristicas (Set I apenas)${NC}"
+    echo -e "${CYAN}========================================${NC}"
+    
+    echo ""
+    echo -e "${YELLOW}--- Processando I1-I10 (Etapa 3) ---${NC}"
+    $EXECUTABLE batch-etapa3 "DCKP-instances/DCKP-instances-set I-100/I1 - I10" "results/etapa3/results_I1_I10.csv"
+    
+    echo ""
+    echo -e "${YELLOW}--- Processando I11-I20 (Etapa 3) ---${NC}"
+    $EXECUTABLE batch-etapa3 "DCKP-instances/DCKP-instances-set I-100/I11 - I20" "results/etapa3/results_I11_I20.csv"
+    
+    echo ""
+    echo -e "${YELLOW}Nota: Set II nao executado na Etapa 3 (tempo proibitivo).${NC}"
+    
+    echo ""
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}ETAPA 3 Concluida! (Set I - 100 instancias)${NC}"
+    echo -e "${GREEN}Resultados em: results/etapa3/${NC}"
+    echo -e "${GREEN}========================================${NC}"
+}
+
 # Função para mostrar menu
 show_menu() {
     echo ""
     echo -e "${YELLOW}Escolha o modo de execucao:${NC}"
     echo "  1) Etapa 1 - Heuristicas Construtivas (Greedy + GRASP)"
     echo "  2) Etapa 2 - Buscas Locais (GRASP + HC + VND)"
-    echo "  3) Ambas Etapas"
-    echo "  4) Teste rapido (1 instancia)"
+    echo "  3) Etapa 3 - Metaheuristicas (GRASP + ILS + VNS)"
+    echo "  4) Todas as Etapas"
+    echo "  5) Teste rapido (1 instancia)"
     echo "  0) Sair"
     echo ""
     read -rp "Opcao: " choice
@@ -144,9 +172,13 @@ if [ -n "$ETAPA" ]; then
         etapa2)
             run_etapa2
             ;;
-        ambas)
+        etapa3)
+            run_etapa3
+            ;;
+        todas|ambas)
             run_etapa1
             run_etapa2
+            run_etapa3
             ;;
     esac
     exit 0
@@ -167,10 +199,14 @@ case $choice in
         run_etapa2
         ;;
     3)
-        run_etapa1
-        run_etapa2
+        run_etapa3
         ;;
     4)
+        run_etapa1
+        run_etapa2
+        run_etapa3
+        ;;
+    5)
         echo ""
         echo -e "${GREEN}--- Teste rapido concluido ---${NC}"
         ;;

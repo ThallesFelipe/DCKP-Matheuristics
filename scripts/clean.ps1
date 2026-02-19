@@ -1,24 +1,26 @@
 # Script para limpar arquivos de build e resultados
-# Suporta limpeza separada de Etapa 1 e Etapa 2
+# Suporta limpeza separada de Etapa 1, Etapa 2 e Etapa 3
 
 param(
     [switch]$All,
     [switch]$Build,
     [switch]$Results,
     [switch]$Etapa1,
-    [switch]$Etapa2
+    [switch]$Etapa2,
+    [switch]$Etapa3
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Limpeza do Projeto DCKP" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-if (-not $All -and -not $Build -and -not $Results -and -not $Etapa1 -and -not $Etapa2) {
+if (-not $All -and -not $Build -and -not $Results -and -not $Etapa1 -and -not $Etapa2 -and -not $Etapa3) {
     Write-Host "`nUso:" -ForegroundColor Yellow
     Write-Host "  .\scripts\clean.ps1 -Build      # Limpa build"
-    Write-Host "  .\scripts\clean.ps1 -Results    # Limpa todos resultados (etapa1 + etapa2)"
+    Write-Host "  .\scripts\clean.ps1 -Results    # Limpa todos resultados (etapa1 + etapa2 + etapa3)"
     Write-Host "  .\scripts\clean.ps1 -Etapa1     # Limpa apenas resultados da Etapa 1"
     Write-Host "  .\scripts\clean.ps1 -Etapa2     # Limpa apenas resultados da Etapa 2"
+    Write-Host "  .\scripts\clean.ps1 -Etapa3     # Limpa apenas resultados da Etapa 3"
     Write-Host "  .\scripts\clean.ps1 -All        # Limpa tudo"
     exit 0
 }
@@ -43,6 +45,11 @@ if ($All -or $Results) {
         Remove-Item -Recurse -Force "results\etapa2\analysis" -ErrorAction SilentlyContinue
         Write-Host "  Resultados Etapa 2 removidos" -ForegroundColor Green
     }
+    if (Test-Path "results\etapa3") {
+        Remove-Item "results\etapa3\*.csv" -ErrorAction SilentlyContinue
+        Remove-Item -Recurse -Force "results\etapa3\analysis" -ErrorAction SilentlyContinue
+        Write-Host "  Resultados Etapa 3 removidos" -ForegroundColor Green
+    }
 }
 
 if ($Etapa1 -and -not $All -and -not $Results) {
@@ -64,6 +71,17 @@ if ($Etapa2 -and -not $All -and -not $Results) {
         Write-Host "  Resultados Etapa 2 removidos" -ForegroundColor Green
     } else {
         Write-Host "  Nenhum diretorio results\etapa2 encontrado" -ForegroundColor Yellow
+    }
+}
+
+if ($Etapa3 -and -not $All -and -not $Results) {
+    Write-Host "`nLimpando resultados da Etapa 3..." -ForegroundColor Yellow
+    if (Test-Path "results\etapa3") {
+        Remove-Item "results\etapa3\*.csv" -ErrorAction SilentlyContinue
+        Remove-Item -Recurse -Force "results\etapa3\analysis" -ErrorAction SilentlyContinue
+        Write-Host "  Resultados Etapa 3 removidos" -ForegroundColor Green
+    } else {
+        Write-Host "  Nenhum diretorio results\etapa3 encontrado" -ForegroundColor Yellow
     }
 }
 

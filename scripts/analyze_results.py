@@ -218,10 +218,10 @@ def load_all_results(results_dir: Path) -> Optional[pd.DataFrame]:
 
 
 def load_multi_stage_results() -> Dict[str, pd.DataFrame]:
-    """Load results from multiple stages (etapa1, etapa2)."""
+    """Load results from multiple stages (etapa1, etapa2, etapa3)."""
     results = {}
     
-    for stage in ['etapa1', 'etapa2']:
+    for stage in ['etapa1', 'etapa2', 'etapa3']:
         stage_dir = Path(f"results/{stage}")
         if stage_dir.exists():
             df = load_all_results(stage_dir)
@@ -1360,66 +1360,75 @@ def plot_executive_dashboard(gap_df: pd.DataFrame, df: pd.DataFrame, output_dir:
 
 def plot_etapa_comparison(results: Dict[str, pd.DataFrame], output_dir: Path):
     """
-    Comparar desempenho Etapa 1 vs Etapa 2.
+    Comparar desempenho entre etapas disponíveis.
+    Gera comparações par-a-par para todas as etapas presentes.
     """
-    if 'etapa1' not in results or 'etapa2' not in results:
-        print("    [PULAR] Necessário etapa1 e etapa2 para comparação")
+    available_stages = sorted(results.keys())
+    
+    if len(available_stages) < 2:
+        print("    [PULAR] Necessário pelo menos 2 etapas para comparação")
         return
     
-    df1 = results['etapa1']
-    df2 = results['etapa2']
+    stage_pairs = list(combinations(available_stages, 2))
     
-    # Encontrar instâncias em comum
-    common_instances = set(df1['Instance'].unique()) & set(df2['Instance'].unique())
-    
-    if not common_instances:
-        print("    [PULAR] Nenhuma instância em comum entre as etapas")
-        return
-    
-    # Obter melhor lucro por instância para cada etapa
-    best1 = df1[df1['Instance'].isin(common_instances)].groupby('Instance')['Profit'].max()
-    best2 = df2[df2['Instance'].isin(common_instances)].groupby('Instance')['Profit'].max()
-    
-    # Calcular melhoria
-    improvement = ((best2 - best1) / best1 * 100).dropna()
-    
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-    
-    # Esquerda: Distribuição de melhorias
-    ax1 = axes[0]
-    ax1.hist(improvement.values, bins=20, color='#0072B2', alpha=0.7, edgecolor='black')
-    ax1.axvline(x=0, color='red', linestyle='--', linewidth=1.5, label='Sem alteração')
-    ax1.axvline(x=improvement.median(), color='green', linestyle='-', linewidth=2,
-                label=f'Mediana: {improvement.median():.1f}%')
-    ax1.set_xlabel('Melhoria (%)')
-    ax1.set_ylabel('Número de Instâncias')
-    ax1.set_title('A) Etapa 2 vs Etapa 1: Distribuição de Melhoria')
-    ax1.legend()
-    
-    # Anotação de estatísticas
-    pos_imp = (improvement > 0).sum()
-    neg_imp = (improvement < 0).sum()
-    ax1.annotate(f'Melhorou: {pos_imp} ({pos_imp/len(improvement)*100:.1f}%)\n'
-                 f'Piorou: {neg_imp} ({neg_imp/len(improvement)*100:.1f}%)',
-                 xy=(0.95, 0.95), xycoords='axes fraction',
-                 ha='right', va='top', fontsize=9,
-                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-    
-    # Direita: Gráfico de dispersão
-    ax2 = axes[1]
-    ax2.scatter(best1.values, best2.values, alpha=0.6, edgecolor='black', linewidth=0.5)
-    
-    # Linha diagonal (sem mudança)
-    lims = [min(best1.min(), best2.min()), max(best1.max(), best2.max())]
-    ax2.plot(lims, lims, 'k--', alpha=0.5, label='Sem alteração')
-    ax2.set_xlabel('Melhor Lucro Etapa 1')
-    ax2.set_ylabel('Melhor Lucro Etapa 2')
-    ax2.set_title('B) Comparação de Melhor Lucro')
-    ax2.legend()
-    
-    plt.suptitle('Comparação de Etapas: Melhorias da Busca Local', fontsize=12, fontweight='bold')
-    
-    save_figure(fig, output_dir, '11_etapa1_vs_etapa2')
+    for stage_a, stage_b in stage_pairs:
+        df_a = results[stage_a]
+        df_b = results[stage_b]
+        
+        # Encontrar instâncias em comum
+        common_instances = set(df_a['Instance'].unique()) & set(df_b['Instance'].unique())
+        
+        if not common_instances:
+            print(f"    [PULAR] Nenhuma instância em comum entre {stage_a} e {stage_b}")
+            continue
+        
+        # Obter melhor lucro por instância para cada etapa
+        best_a = df_a[df_a['Instance'].isin(common_instances)].groupby('Instance')['Profit'].max()
+        best_b = df_b[df_b['Instance'].isin(common_instances)].groupby('Instance')['Profit'].max()
+        
+        # Calcular melhoria
+        improvement = ((best_b - best_a) / best_a * 100).dropna()
+        
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        
+        label_a = stage_a.replace('etapa', 'Etapa ')
+        label_b = stage_b.replace('etapa', 'Etapa ')
+        
+        # Esquerda: Distribuição de melhorias
+        ax1 = axes[0]
+        ax1.hist(improvement.values, bins=20, color='#0072B2', alpha=0.7, edgecolor='black')
+        ax1.axvline(x=0, color='red', linestyle='--', linewidth=1.5, label='Sem alteração')
+        ax1.axvline(x=improvement.median(), color='green', linestyle='-', linewidth=2,
+                    label=f'Mediana: {improvement.median():.1f}%')
+        ax1.set_xlabel('Melhoria (%)')
+        ax1.set_ylabel('Número de Instâncias')
+        ax1.set_title(f'A) {label_b} vs {label_a}: Distribuição de Melhoria')
+        ax1.legend()
+        
+        # Anotação de estatísticas
+        pos_imp = (improvement > 0).sum()
+        neg_imp = (improvement < 0).sum()
+        ax1.annotate(f'Melhorou: {pos_imp} ({pos_imp/len(improvement)*100:.1f}%)\n'
+                     f'Piorou: {neg_imp} ({neg_imp/len(improvement)*100:.1f}%)',
+                     xy=(0.95, 0.95), xycoords='axes fraction',
+                     ha='right', va='top', fontsize=9,
+                     bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Direita: Gráfico de dispersão
+        ax2 = axes[1]
+        ax2.scatter(best_a.values, best_b.values, alpha=0.6, edgecolor='black', linewidth=0.5)
+        
+        # Linha diagonal (sem mudança)
+        lims = [min(best_a.min(), best_b.min()), max(best_a.max(), best_b.max())]
+        ax2.plot(lims, lims, 'k--', alpha=0.5, label='Sem alteração')
+        ax2.set_xlabel(f'Melhor Lucro {label_a}')
+        ax2.set_ylabel(f'Melhor Lucro {label_b}')
+        ax2.set_title('B) Comparação de Melhor Lucro')
+        ax2.legend()
+        
+        plt.suptitle(f'Comparação: {label_b} vs {label_a}', fontsize=12, fontweight='bold')
+        
+        save_figure(fig, output_dir, f'11_{stage_a}_vs_{stage_b}')
 
 
 def plot_improvement_analysis(gap_df: pd.DataFrame, output_dir: Path):
@@ -1767,6 +1776,8 @@ def analyze_stage(stage: str, output_dir: Path) -> Optional[pd.DataFrame]:
     # Gráficos específicos da etapa
     if stage == 'etapa2':
         plot_improvement_analysis(gap_df, stage_output)
+    if stage == 'etapa3':
+        plot_improvement_analysis(gap_df, stage_output)
     
     # Análise estatística
     print(f"\n    Executando testes estatísticos...")
@@ -1813,7 +1824,7 @@ def analyze_stage(stage: str, output_dir: Path) -> Optional[pd.DataFrame]:
 def main():
     """Pipeline principal de análise."""
     parser = argparse.ArgumentParser(description='Suite de Análise DCKP v2.0')
-    parser.add_argument('--stage', '-s', choices=['etapa1', 'etapa2', 'all'], 
+    parser.add_argument('--stage', '-s', choices=['etapa1', 'etapa2', 'etapa3', 'all'], 
                         default='all', help='Qual etapa analisar')
     parser.add_argument('--output', '-o', default='results/analysis',
                         help='Diretório de saída')
@@ -1842,13 +1853,18 @@ def main():
         if gap2 is not None:
             results['etapa2'] = load_all_results(Path("results/etapa2"))
     
+    if args.stage in ['etapa3', 'all']:
+        gap3 = analyze_stage('etapa3', output_dir)
+        if gap3 is not None:
+            results['etapa3'] = load_all_results(Path("results/etapa3"))
+    
     # Análise cruzada entre etapas
-    if len(results) == 2:
+    if len(results) >= 2:
         print("\n  Gerando comparação entre etapas...")
-        assign_method_styles(
-            list(results['etapa1']['Method'].unique()) + 
-            list(results['etapa2']['Method'].unique())
-        )
+        all_methods = []
+        for stage_df in results.values():
+            all_methods.extend(stage_df['Method'].unique().tolist())
+        assign_method_styles(list(set(all_methods)))
         plot_etapa_comparison(results, output_dir)
     
     print("\n" + "=" * 70)
